@@ -1,4 +1,4 @@
-name: Build firmware
+name: Build firmware SharkyEXE
 
 on:
   workflow_dispatch:
