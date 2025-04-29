@@ -118,7 +118,20 @@ jobs:
         popd
     - name: Run custom post-build script
       run: '[[ -f post-build.sh ]] && . post-build.sh || :'
-
+      
+    - name: Prepare artifacts
+      run: |
+        cp "padavan-ng/trunk/images/$FW_FILE_NAME" .
+        echo "BUILD_TIMESTAMP=$(date '+%Y.%m.%d_%H.%M.%S')" >> $GITHUB_ENV
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: padavan-ng_${{ env.CONFIG_VENDOR }}_${{ env.CONFIG_FIRMWARE_PRODUCT_ID }}_${{ env.BUILD_TIMESTAMP }}
+        retention-days: 7
+        path: |
+          ${{ env.FW_FILE_NAME }}
+          build.config
+          
     - name: Check firmware size
       run: |
         partitions=padavan-ng/trunk/configs/boards/$CONFIG_VENDOR/$CONFIG_FIRMWARE_PRODUCT_ID/partitions.config
