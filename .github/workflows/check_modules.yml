@@ -1,0 +1,15 @@
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+
+      - name: Проверка доп. модулей Padavan
+        run: |
+          find ./user -type d -name "*smarthome*" || echo "smarthome - НЕ найдено"
+          find ./user -type d -name "*mqtt*" || echo "mqtt - НЕ найдено"
+          find ./user -type d -name "*cloud*" || echo "cloud - НЕ найдено"
+          find ./user -type d -name "*adblock*" || echo "adblock - НЕ найдено"
+          find ./user -type d -name "*dns*" || echo "dns - НЕ найдено"
+          find ./user -type d -name "*editor*" || echo "editor - НЕ найдено"
