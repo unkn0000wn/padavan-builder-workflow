@@ -16,8 +16,8 @@ jobs:
 
     - name: Get variables
       run: |
-        sed -i 's|\r$||g' variables build.config
-        . <(cat variables build.config)
+        sed -i 's|\r$||g' variables build_mi3.config
+        . <(cat variables build_mi3.config)
         PADAVAN_THEMES="${PADAVAN_THEMES[*]}"
         for v in "${!PADAVAN_@}" "${!CONFIG_@}"; do
           echo "$v=${!v}" >> $GITHUB_ENV
@@ -47,7 +47,7 @@ jobs:
 
     - name: Build firmware
       run: |
-        cp build.config padavan-ng/trunk/.config
+        cp build_mi3.config padavan-ng/trunk/.config
         cd padavan-ng/trunk
         ./clear_tree.sh
         ./build_firmware.sh
@@ -72,7 +72,7 @@ jobs:
         retention-days: 7
         path: |
           ${{ env.FW_FILE_NAME }}
-          build.config
+          build_mi3.config
 
     - name: Check firmware size
       run: |
