@@ -1,3 +1,5 @@
+name: Check Padavan modules
+
 on: [push, workflow_dispatch]
 
 jobs:
