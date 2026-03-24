@@ -1,9 +1,12 @@
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+    FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Проверка доп. модулей Padavan
         run: |
@@ -13,5 +16,3 @@ jobs:
           find ./user -type d -name "*adblock*" || echo "adblock - НЕ найдено"
           find ./user -type d -name "*dns*" || echo "dns - НЕ найдено"
           find ./user -type d -name "*editor*" || echo "editor - НЕ найдено"
-
-FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
