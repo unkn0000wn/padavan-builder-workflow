@@ -82,64 +82,30 @@ jobs:
           sed -i 's/-flto=auto//g' "$dir/nfq/Makefile" 2>/dev/null || true
           sed -i 's/-flto=auto//g' "$dir/tpws/Makefile" 2>/dev/null || true
         done
-      - name: Disable libcap in zapret (no sys/capability.h)
-        run: |
-          cd padavan-ng/trunk/user/nfqws
-  
-          for dir in zapret-*; do
-            [ -d "$dir/nfq" ] || continue
-  
-            echo "Patching $dir/nfq/sec.* to drop sys/capability.h"
-  
-            # убираем include
-            sed -i '/sys\/capability.h/d' "$dir/nfq/sec.h" 2>/dev/null || true
-  
-            # если в sec.c есть код с cap_*, можно грубо завернуть под #if 0
-            sed -i 's/\(#include "sec.h"\)/\1\n\n#if 0\n/' "$dir/nfq/sec.c" 2>/dev/null || true
-            echo -e "\n#endif /* no libcap in Padavan */" >> "$dir/nfq/sec.c"
-          done
-  
-      - name: Stub out sec.* (no libcap, no uint64_t)
-        run: |
-          cd padavan-ng/trunk/user/nfqws
-  
-          for dir in zapret-*; do
-            [ -d "$dir/nfq" ] || continue
-  
-            echo "Stubbing sec.* in $dir/nfq"
-  
-            cat > "$dir/nfq/sec.h" << 'EOF'
-#pragma once
-#include <stdbool.h>
 
-static inline bool droproot(int uid, const char *user, const int *groups, int group_count)
-{
-    (void)uid; (void)user; (void)groups; (void)group_count;
-    return true;
-}
+    - name: Stub out sec.* (no libcap, no uint64_t)
+      run: |
+        cd padavan-ng/trunk/user/nfqws
 
-static inline bool dropcaps(void)
-{
-    return true;
-}
+        for dir in zapret-*; do
+          [ -d "$dir/nfq" ] || continue
 
-static inline bool checkpcap(unsigned long long caps)
-{
-    (void)caps;
-    return true;
-}
+          echo "Stubbing sec.* in $dir/nfq"
 
-static inline bool setpcap(unsigned long long caps)
-{
-    (void)caps;
-    return true;
-}
-EOF
+          printf '%s\n' \
+'#pragma once' \
+'#include <stdbool.h>' \
+'' \
+'static inline bool droproot(int uid, const char *user, const int *groups, int group_count) { (void)uid; (void)user; (void)groups; (void)group_count; return true; }' \
+'static inline bool dropcaps(void) { return true; }' \
+'static inline bool checkpcap(unsigned long long caps) { (void)caps; return true; }' \
+'static inline bool setpcap(unsigned long long caps) { (void)caps; return true; }' \
+          > "$dir/nfq/sec.h"
 
-          cat > "$dir/nfq/sec.c" << 'EOF'
-#include "sec.h"
-/* Empty implementation for Padavan toolchain without libcap. */
-EOF
+          printf '%s\n' \
+'#include "sec.h"' \
+'/* Empty implementation for Padavan toolchain without libcap. */' \
+          > "$dir/nfq/sec.c"
         done
 
 #    - name: Strip nfq/tpws Makefile hunks from firmware-specific.patch
