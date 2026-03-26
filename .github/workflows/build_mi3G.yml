@@ -42,6 +42,8 @@ jobs:
         rm -rf "$ZAPRET_DIR"
         git clone --branch "$ZAPRET_BRANCH" --depth 1 "$ZAPRET_REPO" "$ZAPRET_DIR"
         cd "$ZAPRET_DIR"
+        # вырубаем LTO в nfqws, чтобы не было ошибки cc1: LTO support has not been enabled
+        sed -i 's/-flto[[:alnum:]=_-]*//g' nfq/Makefile
         git log -1 --oneline
 
     - name: Install themes
