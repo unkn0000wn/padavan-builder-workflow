@@ -27,11 +27,4 @@ fi
 echo "Zapret latest: $(git log -1 --oneline | head -1)"
 git status -s  # Показать изменения
 
-# 3. Опционально: Entware/OPKG (если нужно)
-# sed -i 's/# CONFIG_ENTWARE is not set/CONFIG_ENTWARE=y/' "trunk/configs/RT-N56U/config"
 
-# 4. Логирование для отладки
-echo "Pre-build: Zapret ready in user/zapret/" > pre-build.log
-ls -la | head -10 >> pre-build.log
-
-echo "=== Pre-build end: $(date) ==="
