@@ -1,4 +1,4 @@
-name: Build firmware
+name: Build firmware MI-R3G
 
 on:
   workflow_dispatch:
@@ -18,8 +18,8 @@ jobs:
 
     - name: Get variables
       run: |
-        sed -i 's|\r$||g' variables build.config
-        . <(cat variables build.config)
+        sed -i 's|\r$||g' variables build_R3G.config
+        . <(cat variables build_R3G.config)
         PADAVAN_THEMES="${PADAVAN_THEMES[*]}"
         for v in "${!PADAVAN_@}" "${!CONFIG_@}"; do
           echo "$v=${!v}" >> $GITHUB_ENV
@@ -61,9 +61,9 @@ jobs:
     - name: Run custom pre-build script
       run: '[[ -f pre-build.sh ]] && . pre-build.sh || :'
 
-    - name: Build firmware
+    - name: Build firmware R3G
       run: |
-        cp build.config padavan-ng/trunk/.config
+        cp build_R3G.config padavan-ng/trunk/.config
         cd padavan-ng/trunk
         ./clear_tree.sh
         ./build_firmware.sh
@@ -88,7 +88,7 @@ jobs:
         retention-days: 7
         path: |
           ${{ env.FW_FILE_NAME }}
-          build.config
+          build_R3G.config
 
     - name: Check firmware size
       run: |
