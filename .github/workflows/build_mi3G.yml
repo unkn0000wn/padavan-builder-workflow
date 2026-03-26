@@ -21,9 +21,12 @@ jobs:
         sed -i 's|\r$||g' variables build_R3G.config
         . <(cat variables build_R3G.config)
         PADAVAN_THEMES="${PADAVAN_THEMES[*]}"
-        for v in "${!PADAVAN_@}" "${!CONFIG_@}"; do
+        for v in "${!PADAVAN_@}" "${!CONFIG_@}" "${!ZAPRET_@}"; do
           echo "$v=${!v}" >> $GITHUB_ENV
         done
+    - name: Debug ZAPRET env
+      run: |
+        env | grep -E '^ZAPRET_' || echo "no ZAPRET_* in env"
 
     - name: Download sources and toolchain
       run: |
