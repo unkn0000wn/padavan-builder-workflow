@@ -16,6 +16,6 @@ PADAVAN_THEMES=(
 #  yellow
 )
 
-ZAPRET_REPO="https://github.com/bol-van/zapret.git"
-ZAPRET_BRANCH="master"   # или другая ветка, которая тебе нужна
-ZAPRET_DIR="zapret-71.4"
+# ZAPRET_REPO="https://github.com/bol-van/zapret.git"
+# ZAPRET_BRANCH="master"   # или другая ветка, которая тебе нужна
+# ZAPRET_DIR="zapret-71.4"
