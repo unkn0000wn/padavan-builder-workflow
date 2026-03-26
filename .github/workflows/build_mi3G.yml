@@ -47,7 +47,7 @@ jobs:
     - name: Run custom pre-build script
       run: '[[ -f pre-build.sh ]] && . pre-build.sh || :'
 
-    - name: Build firmware RM-AC2100
+    - name: Build firmware MI-R3G
       run: |
         cp build_R3G.config padavan-ng/trunk/.config
         cd padavan-ng/trunk
