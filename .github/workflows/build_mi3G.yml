@@ -24,6 +24,7 @@ jobs:
         for v in "${!PADAVAN_@}" "${!CONFIG_@}" "${!ZAPRET_@}"; do
           echo "$v=${!v}" >> $GITHUB_ENV
         done
+
     - name: Debug ZAPRET env
       run: |
         env | grep -E '^ZAPRET_' || echo "no ZAPRET_* in env"
@@ -35,49 +36,45 @@ jobs:
         git -C padavan-ng checkout "$PADAVAN_COMMIT"
         wget -qO- "$PADAVAN_TOOLCHAIN_URL" | tar -C padavan-ng --zstd -xf -
 
-
-    - name: Detect latest zapret tag from /tags and patch nfqws Makefile
+    - name: Detect latest zapret v7* tag from /tags and patch nfqws Makefile
       run: |
         cd padavan-ng/trunk/user/nfqws
-    
+
         PAGE=$(curl -fsSL https://github.com/bol-van/zapret/tags || true)
-    
+
         # только теги v7x.x (v71.4, v72.12, и т.п.)
         LATEST_TAG=$(
           printf '%s\n' "$PAGE" |
             grep -oE 'v7[0-9]+\.[0-9]+' |
             head -n1 || true
         )
-    
+
         echo "Raw LATEST_TAG: '$LATEST_TAG'"
-    
+
         if [ -z "$LATEST_TAG" ]; then
           echo "ERROR: failed to detect latest v7* tag from /tags"
           exit 1
         fi
-    
+
         VER_NO_V=$(printf '%s\n' "$LATEST_TAG" | sed -E 's/^v//')
-    
+
         echo "Using zapret version: $VER_NO_V"
-    
+
         sed -i "s/^SRC_VER = .*/SRC_VER = $VER_NO_V/" Makefile
 
-    - name: Strip nfq/tpws Makefile hunks from firmware-specific.patch for 72.xx
+    - name: Strip nfq/tpws Makefile hunks from firmware-specific.patch
       run: |
         cd padavan-ng/trunk/user/nfqws/patches
 
-        # создаём облегчённую копию патча без кусков для nfq/Makefile и tpws/Makefile
         awk '
           /diff --git a\/nfq\/Makefile b\/nfq\/Makefile/ { skip=1 }
           /diff --git a\/tpws\/Makefile b\/tpws\/Makefile/ { skip=1 }
           /^diff --git/ && $0 !~ /nfq\/Makefile/ && $0 !~ /tpws\/Makefile/ { skip=0 }
           skip==0 { print }
-        ' firmware-specific.patch > firmware-specific-72.12.patch
+        ' firmware-specific.patch > firmware-specific.stripped.patch
 
-        mv firmware-specific-72.12.patch firmware-specific.patch
+        mv firmware-specific.stripped.patch firmware-specific.patch
 
-
-        
     - name: Install themes
       run: |
         if [[ -n $PADAVAN_THEMES ]]; then
