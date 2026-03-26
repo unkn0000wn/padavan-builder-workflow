@@ -31,7 +31,21 @@ jobs:
         git clone -b "$PADAVAN_BRANCH" "$PADAVAN_REPO"
         git -C padavan-ng checkout "$PADAVAN_COMMIT"
         wget -qO- "$PADAVAN_TOOLCHAIN_URL" | tar -C padavan-ng --zstd -xf -
+# 1. Разовый отладочный шаг – посмотреть, где используется zapret-71.4
+    - name: Debug zapret paths
+      run: |
+        cd padavan-ng/trunk
+        grep -R "zapret-71.4" -n . || echo "no explicit refs"
 
+    # 2. Подмена встроенного Zapret на v72.12
+    - name: Update embedded Zapret to v72.12
+      run: |
+        cd padavan-ng/trunk/user/nfqws
+        rm -rf zapret-71.4
+        git clone --branch v72.12 --depth 1 https://github.com/bol-van/zapret.git zapret-71.4
+        cd zapret-71.4
+        git log -1 --oneline
+        
     - name: Install themes
       run: |
         if [[ -n $PADAVAN_THEMES ]]; then
