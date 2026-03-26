@@ -34,12 +34,12 @@ jobs:
 
     # Подмена встроенного Zapret на последнюю версию
     - name: Update embedded Zapret
-  run: |
-    cd padavan-ng/trunk/user/nfqws
-    rm -rf "$ZAPRET_DIR"
-    git clone --branch "$ZAPRET_BRANCH" --depth 1 "$ZAPRET_REPO" "$ZAPRET_DIR"
-    cd "$ZAPRET_DIR"
-    git log -1 --oneline
+      run: |
+        cd padavan-ng/trunk/user/nfqws
+        rm -rf "$ZAPRET_DIR"
+        git clone --branch "$ZAPRET_BRANCH" --depth 1 "$ZAPRET_REPO" "$ZAPRET_DIR"
+        cd "$ZAPRET_DIR"
+        git log -1 --oneline
 
     - name: Install themes
       run: |
