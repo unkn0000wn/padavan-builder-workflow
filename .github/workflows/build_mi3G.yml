@@ -39,29 +39,28 @@ jobs:
     - name: Detect latest zapret tag from /tags and patch nfqws Makefile
       run: |
         cd padavan-ng/trunk/user/nfqws
-
-        # тянем страницу тегов
+    
         PAGE=$(curl -fsSL https://github.com/bol-van/zapret/tags || true)
-
-        echo "PAGE length: ${#PAGE}"
-
-        # выдёргиваем первый vNN.NN
-        LATEST_TAG=$(printf '%s\n' "$PAGE" | grep -oE 'v[0-9]+\.[0-9]+' | head -n1 || true)
-
+    
+        # только теги v7x.x (v71.4, v72.12, и т.п.)
+        LATEST_TAG=$(
+          printf '%s\n' "$PAGE" |
+            grep -oE 'v7[0-9]+\.[0-9]+' |
+            head -n1 || true
+        )
+    
         echo "Raw LATEST_TAG: '$LATEST_TAG'"
-
+    
         if [ -z "$LATEST_TAG" ]; then
-          echo "ERROR: failed to detect latest tag from /tags"
+          echo "ERROR: failed to detect latest v7* tag from /tags"
           exit 1
         fi
-
+    
         VER_NO_V=$(printf '%s\n' "$LATEST_TAG" | sed -E 's/^v//')
-
-        echo "VER_NO_V: '$VER_NO_V'"
-
+    
+        echo "Using zapret version: $VER_NO_V"
+    
         sed -i "s/^SRC_VER = .*/SRC_VER = $VER_NO_V/" Makefile
-
-        echo "Patched Makefile SRC_VER to: $VER_NO_V"
         
 
 
