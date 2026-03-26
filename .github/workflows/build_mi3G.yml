@@ -97,7 +97,54 @@ jobs:
           # если в sec.c есть код с cap_*, можно грубо завернуть под #if 0
           sed -i 's/\(#include "sec.h"\)/\1\n\n#if 0\n/' "$dir/nfq/sec.c" 2>/dev/null || true
           echo -e "\n#endif /* no libcap in Padavan */" >> "$dir/nfq/sec.c"
-        done    
+        done
+
+    - name: Stub out sec.* (no libcap, no uint64_t)
+      run: |
+        cd padavan-ng/trunk/user/nfqws
+
+        for dir in zapret-*; do
+          [ -d "$dir/nfq" ] || continue
+
+          echo "Stubbing sec.* in $dir/nfq"
+
+          # полностью переписываем sec.h под простые заглушки
+          cat > "$dir/nfq/sec.h" << 'EOF'
+#pragma once
+#include <stdbool.h>
+
+static inline bool droproot(int uid, const char *user, const int *groups, int group_count)
+{
+    /* On Padavan we typically run as root anyway, so just pretend success. */
+    (void)uid; (void)user; (void)groups; (void)group_count;
+    return true;
+}
+
+static inline bool dropcaps(void)
+{
+    /* No capabilities support on this toolchain, pretend success. */
+    return true;
+}
+
+static inline bool checkpcap(unsigned long long caps)
+{
+    (void)caps;
+    return true;
+}
+
+static inline bool setpcap(unsigned long long caps)
+{
+    (void)caps;
+    return true;
+}
+EOF
+
+          # sec.c можно сделать пустышкой, чтобы ничего лишнего не тянуло
+          cat > "$dir/nfq/sec.c" << 'EOF'
+#include "sec.h"
+/* Empty implementation for Padavan toolchain without libcap. */
+EOF
+        done
 
 #    - name: Strip nfq/tpws Makefile hunks from firmware-specific.patch
 #      run: |
