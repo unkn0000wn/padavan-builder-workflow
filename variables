@@ -7,6 +7,10 @@ PADAVAN_THEMES_REPO="https://gitlab.com/hadzhioglu/padavan-themes.git"
 #PADAVAN_THEMES_REPO="https://gitlab.com/hadzhioglu/padavan-themes-lite.git"
 PADAVAN_THEMES_BRANCH="main"
 
+ZAPRET_REPO="https://github.com/bol-van/zapret.git"
+ZAPRET_BRANCH="master"   # или другая ветка, которая тебе нужна
+ZAPRET_DIR="zapret-71.4"
+
 PADAVAN_THEMES=(
 #  blue
 #  blue2
