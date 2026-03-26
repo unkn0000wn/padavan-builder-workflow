@@ -67,22 +67,6 @@ jobs:
         cd padavan-ng/trunk/user/nfqws/patches
         mv firmware-specific.patch firmware-specific.disabled || true
 
-    - name: Strip LTO flags from zapret nfq/tpws Makefiles
-      run: |
-        cd padavan-ng/trunk/user/nfqws
-
-        # на случай, если каталога ещё нет, форсим распаковку
-        if [ ! -d "$SRC_NAME" ]; then
-          make -C . download_test extract_test || true
-        fi
-
-        for dir in zapret-*; do
-          [ -d "$dir/nfq" ] || continue
-          echo "Patching $dir/nfq/Makefile and $dir/tpws/Makefile"
-          sed -i 's/-flto=auto//g' "$dir/nfq/Makefile" 2>/dev/null || true
-          sed -i 's/-flto=auto//g' "$dir/tpws/Makefile" 2>/dev/null || true
-        done
-
     - name: Stub out sec.* (no libcap, no uint64_t)
       run: |
         cd padavan-ng/trunk/user/nfqws
@@ -92,35 +76,23 @@ jobs:
 
           echo "Stubbing sec.* in $dir/nfq"
 
-          printf '%s\n' \
-'#pragma once' \
-'#include <stdbool.h>' \
-'' \
-'static inline bool droproot(int uid, const char *user, const int *groups, int group_count) { (void)uid; (void)user; (void)groups; (void)group_count; return true; }' \
-'static inline bool dropcaps(void) { return true; }' \
-'static inline bool checkpcap(unsigned long long caps) { (void)caps; return true; }' \
-'static inline bool setpcap(unsigned long long caps) { (void)caps; return true; }' \
-          > "$dir/nfq/sec.h"
+          {
+            echo '#pragma once'
+            echo '#include <stdbool.h>'
+            echo
+            echo 'static inline bool droproot(int uid, const char *user, const int *groups, int group_count) { (void)uid; (void)user; (void)groups; (void)group_count; return true; }'
+            echo 'static inline bool dropcaps(void) { return true; }'
+            echo 'static inline bool checkpcap(unsigned long long caps) { (void)caps; return true; }'
+            echo 'static inline bool setpcap(unsigned long long caps) { (void)caps; return true; }'
+          } > "$dir/nfq/sec.h"
 
-          printf '%s\n' \
-'#include "sec.h"' \
-'/* Empty implementation for Padavan toolchain without libcap. */' \
-          > "$dir/nfq/sec.c"
+          {
+            echo '#include "sec.h"'
+            echo '/* Empty implementation for Padavan toolchain without libcap. */'
+          } > "$dir/nfq/sec.c"
         done
-
-#    - name: Strip nfq/tpws Makefile hunks from firmware-specific.patch
-#      run: |
-#        cd padavan-ng/trunk/user/nfqws/patches
-
-#        awk '
-#          /diff --git a\/nfq\/Makefile b\/nfq\/Makefile/ { skip=1 }
-#          /diff --git a\/tpws\/Makefile b\/tpws\/Makefile/ { skip=1 }
-#          /^diff --git/ && $0 !~ /nfq\/Makefile/ && $0 !~ /tpws\/Makefile/ { skip=0 }
-#          skip==0 { print }
-#        ' firmware-specific.patch > firmware-specific.stripped.patch
-
-#        mv firmware-specific.stripped.patch firmware-specific.patch
-
+        
+####################
 
     - name: Install themes
       run: |
