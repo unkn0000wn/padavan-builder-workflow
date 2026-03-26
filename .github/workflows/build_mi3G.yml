@@ -67,14 +67,21 @@ jobs:
         cd padavan-ng/trunk/user/nfqws/patches
         mv firmware-specific.patch firmware-specific.disabled || true
 
-    - name: Make zapret extract_test strip LTO
+    - name: Strip LTO flags from zapret nfq/tpws Makefiles
       run: |
         cd padavan-ng/trunk/user/nfqws
 
-        # после распаковки архива zapret добавляем sed, который вырезает -flto=auto
-        sed -i '/tar zxf \$(SRC_NAME).tar.gz;/a \
-\ \ \ \ sed -i "s/-flto=auto//g" $(SRC_NAME)\\/nfq\\/Makefile || true\n\
-\ \ \ \ sed -i "s/-flto=auto//g" $(SRC_NAME)\\/tpws\\/Makefile || true' Makefile
+        # на случай, если каталога ещё нет, форсим распаковку
+        if [ ! -d "$SRC_NAME" ]; then
+          make -C . download_test extract_test || true
+        fi
+
+        for dir in zapret-*; do
+          [ -d "$dir/nfq" ] || continue
+          echo "Patching $dir/nfq/Makefile and $dir/tpws/Makefile"
+          sed -i 's/-flto=auto//g' "$dir/nfq/Makefile" 2>/dev/null || true
+          sed -i 's/-flto=auto//g' "$dir/tpws/Makefile" 2>/dev/null || true
+        done
 
         
 
