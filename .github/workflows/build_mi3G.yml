@@ -61,7 +61,20 @@ jobs:
         echo "Using zapret version: $VER_NO_V"
     
         sed -i "s/^SRC_VER = .*/SRC_VER = $VER_NO_V/" Makefile
-        
+
+    - name: Strip nfq/tpws Makefile hunks from firmware-specific.patch for 72.xx
+      run: |
+        cd padavan-ng/trunk/user/nfqws/patches
+
+        # создаём облегчённую копию патча без кусков для nfq/Makefile и tpws/Makefile
+        awk '
+          /diff --git a\/nfq\/Makefile b\/nfq\/Makefile/ { skip=1 }
+          /diff --git a\/tpws\/Makefile b\/tpws\/Makefile/ { skip=1 }
+          /^diff --git/ && $0 !~ /nfq\/Makefile/ && $0 !~ /tpws\/Makefile/ { skip=0 }
+          skip==0 { print }
+        ' firmware-specific.patch > firmware-specific-72.12.patch
+
+        mv firmware-specific-72.12.patch firmware-specific.patch
 
 
         
