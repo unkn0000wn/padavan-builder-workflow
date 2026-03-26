@@ -62,18 +62,25 @@ jobs:
 
         sed -i "s/^SRC_VER = .*/SRC_VER = $VER_NO_V/" Makefile
 
-    - name: Strip nfq/tpws Makefile hunks from firmware-specific.patch
+    - name: Disable firmware-specific.patch
       run: |
         cd padavan-ng/trunk/user/nfqws/patches
+        mv firmware-specific.patch firmware-specific.disabled || true
+        
 
-        awk '
-          /diff --git a\/nfq\/Makefile b\/nfq\/Makefile/ { skip=1 }
-          /diff --git a\/tpws\/Makefile b\/tpws\/Makefile/ { skip=1 }
-          /^diff --git/ && $0 !~ /nfq\/Makefile/ && $0 !~ /tpws\/Makefile/ { skip=0 }
-          skip==0 { print }
-        ' firmware-specific.patch > firmware-specific.stripped.patch
+#    - name: Strip nfq/tpws Makefile hunks from firmware-specific.patch
+#      run: |
+#        cd padavan-ng/trunk/user/nfqws/patches
 
-        mv firmware-specific.stripped.patch firmware-specific.patch
+#        awk '
+#          /diff --git a\/nfq\/Makefile b\/nfq\/Makefile/ { skip=1 }
+#          /diff --git a\/tpws\/Makefile b\/tpws\/Makefile/ { skip=1 }
+#          /^diff --git/ && $0 !~ /nfq\/Makefile/ && $0 !~ /tpws\/Makefile/ { skip=0 }
+#          skip==0 { print }
+#        ' firmware-specific.patch > firmware-specific.stripped.patch
+
+#        mv firmware-specific.stripped.patch firmware-specific.patch
+
 
     - name: Install themes
       run: |
