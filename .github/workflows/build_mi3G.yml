@@ -82,8 +82,22 @@ jobs:
           sed -i 's/-flto=auto//g' "$dir/nfq/Makefile" 2>/dev/null || true
           sed -i 's/-flto=auto//g' "$dir/tpws/Makefile" 2>/dev/null || true
         done
+    - name: Disable libcap in zapret (no sys/capability.h)
+      run: |
+        cd padavan-ng/trunk/user/nfqws
 
-        
+        for dir in zapret-*; do
+          [ -d "$dir/nfq" ] || continue
+
+          echo "Patching $dir/nfq/sec.* to drop sys/capability.h"
+
+          # убираем include
+          sed -i '/sys\/capability.h/d' "$dir/nfq/sec.h" 2>/dev/null || true
+
+          # если в sec.c есть код с cap_*, можно грубо завернуть под #if 0
+          sed -i 's/\(#include "sec.h"\)/\1\n\n#if 0\n/' "$dir/nfq/sec.c" 2>/dev/null || true
+          echo -e "\n#endif /* no libcap in Padavan */" >> "$dir/nfq/sec.c"
+        done    
 
 #    - name: Strip nfq/tpws Makefile hunks from firmware-specific.patch
 #      run: |
