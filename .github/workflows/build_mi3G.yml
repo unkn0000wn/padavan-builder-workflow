@@ -35,21 +35,36 @@ jobs:
         git -C padavan-ng checkout "$PADAVAN_COMMIT"
         wget -qO- "$PADAVAN_TOOLCHAIN_URL" | tar -C padavan-ng --zstd -xf -
 
+
     - name: Detect latest zapret tag from /tags and patch nfqws Makefile
       run: |
         cd padavan-ng/trunk/user/nfqws
 
-        LATEST_TAG=$(
-          curl -s https://github.com/bol-van/zapret/tags |
-            grep -oE 'v[0-9]+\\.[0-9]+' |
-            head -n1
-        )
+        # тянем страницу тегов
+        PAGE=$(curl -fsSL https://github.com/bol-van/zapret/tags || true)
 
-        echo "Latest zapret tag: $LATEST_TAG"
+        echo "PAGE length: ${#PAGE}"
 
-        VER_NO_V=$(echo "$LATEST_TAG" | sed -E 's/^v//')
+        # выдёргиваем первый vNN.NN
+        LATEST_TAG=$(printf '%s\n' "$PAGE" | grep -oE 'v[0-9]+\.[0-9]+' | head -n1 || true)
+
+        echo "Raw LATEST_TAG: '$LATEST_TAG'"
+
+        if [ -z "$LATEST_TAG" ]; then
+          echo "ERROR: failed to detect latest tag from /tags"
+          exit 1
+        fi
+
+        VER_NO_V=$(printf '%s\n' "$LATEST_TAG" | sed -E 's/^v//')
+
+        echo "VER_NO_V: '$VER_NO_V'"
 
         sed -i "s/^SRC_VER = .*/SRC_VER = $VER_NO_V/" Makefile
+
+        echo "Patched Makefile SRC_VER to: $VER_NO_V"
+        
+
+
         
     - name: Install themes
       run: |
