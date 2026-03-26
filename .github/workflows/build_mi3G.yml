@@ -34,22 +34,23 @@ jobs:
         git clone -b "$PADAVAN_BRANCH" "$PADAVAN_REPO"
         git -C padavan-ng checkout "$PADAVAN_COMMIT"
         wget -qO- "$PADAVAN_TOOLCHAIN_URL" | tar -C padavan-ng --zstd -xf -
-        
-    - name: Detect latest zapret tag and patch nfqws Makefile
+
+    - name: Detect latest zapret tag from /tags and patch nfqws Makefile
       run: |
         cd padavan-ng/trunk/user/nfqws
 
         LATEST_TAG=$(
-          curl -s https://github.com/bol-van/zapret/releases \
-            | grep -oE 'Tagv[0-9]\+\.[0-9]\+' \
-            | head -n1 \
-            | sed -E 's/Tagv//'
+          curl -s https://github.com/bol-van/zapret/tags |
+            grep -oE 'v[0-9]+\\.[0-9]+' |
+            head -n1
         )
 
-        echo "Latest zapret tag: v$LATEST_TAG"
+        echo "Latest zapret tag: $LATEST_TAG"
 
-        sed -i "s/^SRC_VER = .*/SRC_VER = $LATEST_TAG/" Makefile
+        VER_NO_V=$(echo "$LATEST_TAG" | sed -E 's/^v//')
 
+        sed -i "s/^SRC_VER = .*/SRC_VER = $VER_NO_V/" Makefile
+        
     - name: Install themes
       run: |
         if [[ -n $PADAVAN_THEMES ]]; then
