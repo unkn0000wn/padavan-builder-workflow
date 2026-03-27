@@ -1,4 +1,4 @@
-name: Build firmware MI-R3G
+name: Test Preplexity firmware MI-R3G
 
 on:
   workflow_dispatch:
