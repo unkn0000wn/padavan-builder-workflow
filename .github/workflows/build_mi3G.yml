@@ -111,7 +111,36 @@ jobs:
         echo "=== nfq Makefile after strip ==="
         sed -n '1,120p' zapret-*/nfq/Makefile || true
 
+######### 1
 
+    - name: Strip all LTO flags and duplicate block from zapret nfq Makefile
+      run: |
+        cd padavan-ng/trunk/user/nfqws
+
+        if [ ! -d "$SRC_NAME" ]; then
+          make -C . download_test extract_test || true
+        fi
+
+        nfq_mk="zapret-*/nfq/Makefile"
+
+        echo "=== nfq Makefile before strip ==="
+        sed -n '1,160p' $nfq_mk || true
+
+        # 1) Вырезаем любой -flto из файла (на случай других мест)
+        sed -i 's/-flto=[^[:space:]]*//g; s/-flto//g; s/-fno-fat-lto-objects//g' $nfq_mk
+
+        # 2) Обрезаем всё, что идёт после ПЕРВОГО clean:
+        awk '
+          /^clean:/ { seen_clean=1 }
+          !seen_clean { print }
+          /^clean:/ && !printed_clean {
+            print
+            printed_clean=1
+          }
+        ' $nfq_mk > Makefile.tmp && mv Makefile.tmp $nfq_mk
+
+        echo "=== nfq Makefile after strip ==="
+        sed -n '1,160p' $nfq_mk || true
 
 
 ####################
