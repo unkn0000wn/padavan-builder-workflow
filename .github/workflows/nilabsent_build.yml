@@ -1,4 +1,4 @@
-name: Build firmware
+name: Build firmware nilabsent/padavan-ng-builder/
 run-name: "Build firmware #${{ github.run_number }}"
 
 on:
