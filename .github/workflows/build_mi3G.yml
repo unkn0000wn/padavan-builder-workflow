@@ -95,7 +95,7 @@ jobs:
 #####
 ######### 1
 
-    - name: Strip all LTO flags and duplicate block from zapret nfq Makefile
+    - name: Strip all LTO flags and duplicate block from zapret nfq Makefiles
       run: |
         cd padavan-ng/trunk/user/nfqws
 
@@ -103,30 +103,31 @@ jobs:
           make -C . download_test extract_test || true
         fi
 
-        nfq_mk=$(echo zapret-*/nfq/Makefile)
+        for nfq_mk in zapret-*/nfq/Makefile; do
+          [ -f "$nfq_mk" ] || continue
 
-        echo "=== nfq Makefile before strip ==="
-        sed -n '1,160p' "$nfq_mk" || true
+          echo "=== nfq Makefile before strip: $nfq_mk ==="
+          sed -n '1,160p' "$nfq_mk" || true
 
-        # 1) вырезаем любой -flto
-        sed -i 's/-flto=[^[:space:]]*//g; s/-flto//g; s/-fno-fat-lto-objects//g' "$nfq_mk"
+          # 1) вырезаем любой -flto
+          sed -i 's/-flto=[^[:space:]]*//g; s/-flto//g; s/-fno-fat-lto-objects//g' "$nfq_mk"
 
-        # 2) оставляем только первый блок до первого clean: и сам clean:
-        awk '
-          /^clean:/ && !seen_clean {
-            seen_clean=1
-            print
-            next
-          }
-          seen_clean { next }
-          { print }
-        ' "$nfq_mk" > Makefile.nolto
+          # 2) оставляем только первый блок до первого clean: и сам clean:
+          awk '
+            /^clean:/ && !seen_clean {
+              seen_clean=1
+              print
+              next
+            }
+            seen_clean { next }
+            { print }
+          ' "$nfq_mk" > Makefile.nolto
 
-        mv Makefile.nolto "$nfq_mk"
+          mv Makefile.nolto "$nfq_mk"
 
-        echo "=== nfq Makefile after strip ==="
-        sed -n '1,160p' "$nfq_mk" || true
-
+          echo "=== nfq Makefile after strip: $nfq_mk ==="
+          sed -n '1,160p' "$nfq_mk" || true
+        done
 
 ####################
 
