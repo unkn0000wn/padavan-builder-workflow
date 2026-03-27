@@ -121,26 +121,29 @@ jobs:
           make -C . download_test extract_test || true
         fi
 
-        nfq_mk="zapret-*/nfq/Makefile"
+        nfq_mk=$(echo zapret-*/nfq/Makefile)
 
         echo "=== nfq Makefile before strip ==="
-        sed -n '1,160p' $nfq_mk || true
+        sed -n '1,160p' "$nfq_mk" || true
 
-        # 1) Вырезаем любой -flto из файла (на случай других мест)
-        sed -i 's/-flto=[^[:space:]]*//g; s/-flto//g; s/-fno-fat-lto-objects//g' $nfq_mk
+        # 1) вырезаем любой -flto
+        sed -i 's/-flto=[^[:space:]]*//g; s/-flto//g; s/-fno-fat-lto-objects//g' "$nfq_mk"
 
-        # 2) Обрезаем всё, что идёт после ПЕРВОГО clean:
+        # 2) оставляем только первый блок до первого clean: и сам clean:
         awk '
-          /^clean:/ { seen_clean=1 }
-          !seen_clean { print }
-          /^clean:/ && !printed_clean {
+          /^clean:/ && !seen_clean {
+            seen_clean=1
             print
-            printed_clean=1
+            next
           }
-        ' $nfq_mk > Makefile.tmp && mv Makefile.tmp $nfq_mk
+          seen_clean { next }
+          { print }
+        ' "$nfq_mk" > Makefile.nolto
+
+        mv Makefile.nolto "$nfq_mk"
 
         echo "=== nfq Makefile after strip ==="
-        sed -n '1,160p' $nfq_mk || true
+        sed -n '1,160p' "$nfq_mk" || true
 
 
 ####################
