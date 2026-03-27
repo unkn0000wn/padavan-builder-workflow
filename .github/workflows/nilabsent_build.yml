@@ -1,5 +1,4 @@
-name: Build firmware nilabsent/padavan-ng-builder/
-run-name: "Build firmware #${{ github.run_number }}"
+name: Test Preplexity firmware MI-R3G
 
 on:
   workflow_dispatch:
@@ -10,157 +9,243 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    container: registry.gitlab.com/hadzhioglu/padavan-ng
     defaults:
       run:
         shell: bash
 
     steps:
-    - uses: actions/checkout@v6
+      - uses: actions/checkout@v5
 
-    - name: Set up build tools
-      run: |
-        sudo apt update
-        sudo apt install --no-install-recommends -y \
-            autoconf automake autopoint cmake \
-            bison build-essential flex gawk \
-            gettext git gperf libtool libtool-bin \
-            pkg-config fakeroot kmod cpio doxygen \
-            texinfo help2man libncurses5-dev \
-            zlib1g-dev libsqlite3-dev gcc-multilib \
-            curl dos2unix unzip wget locales xxd libltdl-dev \
-            libgmp3-dev libmpfr-dev libarchive-tools libblkid-dev
-        sudo locale-gen --no-purge en_US.UTF-8 ru_RU.UTF-8
-        export LANG="en_US.UTF-8"
-        export LC_ALL="en_US.UTF-8"
-
-    - name: Get variables
-      run: |
-        sed -i 's|\r$||g' variables
-        grep -hE '^\s*PADAVAN_[A-Z0-9_]+=' variables >> "$GITHUB_ENV"
-
-    - name: Download sources and toolchain
-      run: |
-        git config --global --add safe.directory '*'
-        git clone -b "${{ env.PADAVAN_BRANCH }}" "${{ env.PADAVAN_REPO }}" padavan-ng --depth=1
-        git -C padavan-ng checkout "${{ env.PADAVAN_COMMIT }}"
-
-        ARCH=""
-        case "${{ env.PADAVAN_TOOLCHAIN_URL }}" in
-            *.tzst|*.tar.zst) ARCH="--zstd" ;;
-            *.txz|*.tar.xz) ARCH="--xz" ;;
-        esac
-        wget -qO- "${{ env.PADAVAN_TOOLCHAIN_URL }}" | tar -C padavan-ng $ARCH -xf - || :
-
-    - name: Run custom pre-build script
-      run: '[[ -f pre-build.sh ]] && . pre-build.sh || :'
-
-    - name: Build toolchain
-      if: ${{ hashFiles('padavan-ng/toolchain/out/mipsel-linux-uclibc/sysroot/lib/libuClibc-*.so') == '' }}
-      run: |
-        cd padavan-ng/toolchain
-        ./clean_sources.sh
-        ./build_toolchain.sh
-
-    - name: Build firmware
-      run: |
-        set +e
-        for cfg in $(ls configs.build/*.config); do
-            cp -f "$cfg" padavan-ng/trunk/.config
-            echo "::group::Build $(basename "$cfg" .config)"
-            echo "Waiting for the last 589 lines of logs (~10-20 minutes per config)..."
-
-            pushd padavan-ng/trunk
-
-            sed -i 's|\r$||g' .config
-            . <(grep -hE '^\s*CONFIG_(VENDOR|FIRMWARE_PRODUCT_ID)=' .config)
-
-            TEMP_LOG=$(mktemp)
-            ./clear_tree.sh >/dev/null 2>&1
-            ./build_firmware.sh > "$TEMP_LOG" 2>&1
-
-            echo "Showing last 589 lines:"
-            tail -n 589 "$TEMP_LOG"
-            rm -f "$TEMP_LOG"
-
-            popd
-
-            FW_FILE_NAME="$(find padavan-ng/trunk/images -type f -regextype posix-extended -iregex ".*\.(trx|bin)$" \
-                            -printf "%T@\t%f\n" | sort -V | tail -1 | cut -f2)"
-            [[ -n $FW_FILE_NAME ]] || { echo "Firmware file not found"; continue; }
-
-            partitions="padavan-ng/trunk/configs/boards/$CONFIG_VENDOR/$CONFIG_FIRMWARE_PRODUCT_ID/partitions.config"
-            max_fw_size="$(awk '/Firmware/ { getline; getline; sub(",", ""); print strtonum($2); }' "$partitions")"
-            fw_size="$(stat -c %s "padavan-ng/trunk/images/$FW_FILE_NAME")"
-
-            if ((fw_size > max_fw_size)); then
-              fw_size_fmtd="$(numfmt --grouping "$fw_size") bytes"
-              max_fw_size_fmtd="$(numfmt --grouping "$max_fw_size") bytes"
-              echo "Firmware size ($fw_size_fmtd) exceeds max size ($max_fw_size_fmtd) for your target device"
-              continue
-            fi
-
-            FW_PATH="release/${FW_FILE_NAME%.*}"
-            [[ -d "$FW_PATH" ]] && FW_PATH="${FW_PATH}_$(basename "$cfg" .config)"
-            mkdir -p "$FW_PATH"
-            cp -f "padavan-ng/trunk/images/$FW_FILE_NAME" "$FW_PATH"
-            cp -f "$cfg" "$FW_PATH"
-        done
-
-    - name: Run custom post-build script
-      run: '[[ -f post-build.sh ]] && . post-build.sh || :'
-
-    - name: Check if release files exist
-      run: |
-        if ! ls release/* >/dev/null 2>&1; then
-          echo "❌ No files found in release directory"
-          exit 1
-        fi
-
-    - name: Upload artifacts
-      uses: actions/upload-artifact@v6
-      with:
-        name: all_firmware_releases
-        retention-days: 7
-        path: |
-          release/*
-
-  prepare-matrix:
-    runs-on: ubuntu-latest
-    needs: build
-    outputs:
-      files: ${{ steps.collect.outputs.files }}
-    steps:
-      - name: Download releases
-        uses: actions/download-artifact@v7
-        with:
-          name: all_firmware_releases
-          path: release
-
-      - id: collect
+      # Опциональная подготовка инструментов (чаще всего в контейнере уже всё есть)
+      - name: Set up build tools
         run: |
-          FILES=$(ls -d release/*/ 2>/dev/null | xargs -n1 basename \
-            | jq -R -cs 'split("\n")[:-1]')
-          echo "files=$FILES" >> $GITHUB_OUTPUT
+          sudo apt update
+          sudo apt install --no-install-recommends -y \
+              autoconf automake autopoint cmake \
+              bison build-essential flex gawk \
+              gettext git gperf libtool libtool-bin \
+              pkg-config fakeroot kmod cpio doxygen \
+              texinfo help2man libncurses5-dev \
+              zlib1g-dev libsqlite3-dev gcc-multilib \
+              curl dos2unix unzip wget locales xxd libltdl-dev \
+              libgmp3-dev libmpfr-dev libarchive-tools libblkid-dev
+          sudo locale-gen --no-purge en_US.UTF-8 ru_RU.UTF-8
+          export LANG="en_US.UTF-8"
+          export LC_ALL="en_US.UTF-8"
 
-  upload-artifacts:
-    runs-on: ubuntu-latest
-    needs: prepare-matrix
-    if: needs.prepare-matrix.outputs.files != '[]'
-    strategy:
-      matrix:
-        file: ${{ fromJson(needs.prepare-matrix.outputs.files) }}
+      - name: Get variables
+        run: |
+          sed -i 's|\r$||g' variables build_R3G.config
+          . <(cat variables build_R3G.config)
+          PADAVAN_THEMES="${PADAVAN_THEMES[*]}"
+          for v in "${!PADAVAN_@}" "${!CONFIG_@}" "${!ZAPRET_@}"; do
+            echo "$v=${!v}" >> "$GITHUB_ENV"
+          done
 
-    steps:
-      - name: Download releases
-        uses: actions/download-artifact@v7
+      - name: Debug ZAPRET env
+        run: |
+          env | grep -E '^ZAPRET_' || echo "no ZAPRET_* in env"
+
+      - name: Download sources and toolchain
+        run: |
+          git config --global --add safe.directory '*'
+          git clone -b "$PADAVAN_BRANCH" "$PADAVAN_REPO"
+          git -C padavan-ng checkout "$PADAVAN_COMMIT"
+
+          ARCH=""
+          case "$PADAVAN_TOOLCHAIN_URL" in
+            *.tzst|*.tar.zst) ARCH="--zstd" ;;
+            *.txz|*.tar.xz)   ARCH="--xz"   ;;
+          esac
+          wget -qO- "$PADAVAN_TOOLCHAIN_URL" | tar -C padavan-ng $ARCH -xf - || :
+
+      - name: Build toolchain if missing
+        if: ${{ hashFiles('padavan-ng/toolchain/out/mipsel-linux-uclibc/sysroot/lib/libuClibc-*.so') == '' }}
+        run: |
+          cd padavan-ng/toolchain
+          ./clean_sources.sh
+          ./build_toolchain.sh
+
+      - name: Replace nfqws from nilabsent/padavan-ng
+        run: |
+          set -e
+          cd padavan-ng/trunk/user
+
+          echo "=== Replacing nfqws directory ==="
+          rm -rf nfqws
+          mkdir -p nfqws
+          cd nfqws
+
+          BASE_URL="https://raw.githubusercontent.com/nilabsent/padavan-ng/refs/heads/master/trunk/user/nfqws"
+
+          echo "=== Downloading top-level nfqws files ==="
+          curl -fsSL "$BASE_URL/Makefile"  -o Makefile
+          curl -fsSL "$BASE_URL/zapret.sh" -o zapret.sh
+          chmod +x zapret.sh || true
+
+          curl -fsSL "$BASE_URL/zapret-72.12.tar.gz" -o zapret-72.12.tar.gz || true
+
+          echo "=== Downloading nfqws patches/ ==="
+          mkdir -p patches
+          curl -fsSL "$BASE_URL/patches/firmware-specific.patch" -o patches/firmware-specific.patch
+
+          echo "=== Downloading nfqws config/ ==="
+          mkdir -p config/fake
+
+          curl -fsSL "$BASE_URL/config/exclude.list"    -o config/exclude.list
+          curl -fsSL "$BASE_URL/config/post_script.sh"  -o config/post_script.sh
+          curl -fsSL "$BASE_URL/config/strategy"        -o config/strategy
+          curl -fsSL "$BASE_URL/config/strategy0"       -o config/strategy0
+          curl -fsSL "$BASE_URL/config/strategy1"       -o config/strategy1
+          curl -fsSL "$BASE_URL/config/strategy2"       -o config/strategy2
+          curl -fsSL "$BASE_URL/config/strategy3"       -o config/strategy3
+          curl -fsSL "$BASE_URL/config/strategy4"       -o config/strategy4
+          curl -fsSL "$BASE_URL/config/strategy5"       -o config/strategy5
+          curl -fsSL "$BASE_URL/config/strategy6"       -o config/strategy6
+          curl -fsSL "$BASE_URL/config/strategy7"       -o config/strategy7
+          curl -fsSL "$BASE_URL/config/strategy8"       -o config/strategy8
+          curl -fsSL "$BASE_URL/config/strategy9"       -o config/strategy9
+          curl -fsSL "$BASE_URL/config/user.list"       -o config/user.list
+
+          curl -fsSL "$BASE_URL/config/fake/hosts"      -o config/fake/hosts || true
+          curl -fsSL "$BASE_URL/config/fake/iplist"     -o config/fake/iplist || true
+
+          echo "=== nfqws tree from nilabsent ==="
+          ls -R .
+
+      - name: Replace nfqws2 from nilabsent/padavan-ng
+        run: |
+          set -e
+          cd padavan-ng/trunk/user
+
+          echo "=== Replacing nfqws2 directory ==="
+          rm -rf nfqws2
+          mkdir -p nfqws2
+          cd nfqws2
+
+          BASE2_URL="https://raw.githubusercontent.com/nilabsent/padavan-ng/refs/heads/master/trunk/user/nfqws2"
+
+          echo "=== Downloading top-level nfqws2 files ==="
+          curl -fsSL "$BASE2_URL/Makefile"   -o Makefile
+          curl -fsSL "$BASE2_URL/zapret2.sh" -o zapret2.sh || curl -fsSL "$BASE2_URL/zapret.sh" -o zapret2.sh || true
+          chmod +x zapret2.sh || true
+
+          curl -fsSL "$BASE2_URL/zapret-72.12.tar.gz" -o zapret-72.12.tar.gz || true
+
+          echo "=== Downloading nfqws2 patches/ (if exists) ==="
+          mkdir -p patches
+          curl -fsSL "$BASE2_URL/patches/firmware-specific.patch" -o patches/firmware-specific.patch || true
+
+          echo "=== Downloading nfqws2 config/ ==="
+          mkdir -p config/fake
+
+          curl -fsSL "$BASE2_URL/config/exclude.list"    -o config/exclude.list    || true
+          curl -fsSL "$BASE2_URL/config/post_script.sh"  -o config/post_script.sh  || true
+          curl -fsSL "$BASE2_URL/config/strategy"        -o config/strategy        || true
+          curl -fsSL "$BASE2_URL/config/strategy0"       -o config/strategy0       || true
+          curl -fsSL "$BASE2_URL/config/strategy1"       -o config/strategy1       || true
+          curl -fsSL "$BASE2_URL/config/strategy2"       -o config/strategy2       || true
+          curl -fsSL "$BASE2_URL/config/strategy3"       -o config/strategy3       || true
+          curl -fsSL "$BASE2_URL/config/strategy4"       -o config/strategy4       || true
+          curl -fsSL "$BASE2_URL/config/strategy5"       -o config/strategy5       || true
+          curl -fsSL "$BASE2_URL/config/strategy6"       -o config/strategy6       || true
+          curl -fsSL "$BASE2_URL/config/strategy7"       -o config/strategy7       || true
+          curl -fsSL "$BASE2_URL/config/strategy8"       -o config/strategy8       || true
+          curl -fsSL "$BASE2_URL/config/strategy9"       -o config/strategy9       || true
+          curl -fsSL "$BASE2_URL/config/user.list"       -o config/user.list       || true
+
+          curl -fsSL "$BASE2_URL/config/fake/hosts"      -o config/fake/hosts || true
+          curl -fsSL "$BASE2_URL/config/fake/iplist"     -o config/fake/iplist || true
+
+          echo "=== nfqws2 tree from nilabsent ==="
+          ls -R .
+
+      - name: Install themes
+        run: |
+          if [[ -n $PADAVAN_THEMES ]]; then
+            git clone --depth 1 -b "$PADAVAN_THEMES_BRANCH" "$PADAVAN_THEMES_REPO" themes
+            cp -r themes/common-theme themes/jquery.js padavan-ng/trunk/user/www/n56u_ribbon_fixed
+
+            for theme in $PADAVAN_THEMES; do
+              echo "Installing $theme theme"
+              cp -r "themes/$theme-theme" padavan-ng/trunk/user/www/n56u_ribbon_fixed
+            done
+          fi
+
+      - name: Run custom pre-build script
+        run: '[[ -f pre-build.sh ]] && . pre-build.sh || :'
+
+      - name: nfqws / zapret presence check BEFORE build
+        run: |
+          cd padavan-ng/trunk/user/nfqws
+          echo "=== nfqws directory listing BEFORE build ==="
+          ls -al
+          echo "=== zapret* tarballs BEFORE build ==="
+          ls -al zapret-*.tar.gz || echo "no zapret-*.tar.gz found (will be downloaded on first nfqws build)"
+
+      - name: Build firmware R3G
+        run: |
+          cp build_R3G.config padavan-ng/trunk/.config
+          cd padavan-ng/trunk
+          ./clear_tree.sh
+          ./build_firmware.sh
+
+          FW_FILE_NAME="$(find images -type f -regextype posix-extended -iregex '.*\.(trx|bin)$' \
+                          -printf '%T@\t%f\n' | sort -V | tail -1 | cut -f2)"
+          [[ -n $FW_FILE_NAME ]] || { echo "Firmware file not found"; exit 1; }
+          echo "FW_FILE_NAME=$FW_FILE_NAME" >> "$GITHUB_ENV"
+
+      - name: nfqws / zapret presence check AFTER build
+        run: |
+          cd padavan-ng/trunk/user/nfqws
+
+          echo "=== nfqws directory listing AFTER build ==="
+          ls -al
+
+          echo "=== zapret* tarballs AFTER build ==="
+          ls -al zapret-*.tar.gz || echo "no zapret-*.tar.gz found"
+
+          ZAPRET_DIR="$(ls -d zapret-* 2>/dev/null | head -n1 || true)"
+          if [ -n "$ZAPRET_DIR" ] && [ -d "$ZAPRET_DIR" ]; then
+            echo "=== content of $ZAPRET_DIR ==="
+            ls -al "$ZAPRET_DIR"
+            echo "=== $ZAPRET_DIR/nfq/Makefile ==="
+            cat "$ZAPRET_DIR/nfq/Makefile" || echo "no nfq/Makefile"
+            echo "=== $ZAPRET_DIR/tpws/Makefile ==="
+            cat "$ZAPRET_DIR/tpws/Makefile" || echo "no tpws/Makefile"
+          else
+            echo "No zapret-*/ directory found after build (nfqws might not have been built)"
+          fi
+
+      - name: Run custom post-build script
+        run: '[[ -f post-build.sh ]] && . post-build.sh || :'
+
+      - name: Prepare artifacts
+        run: |
+          cp "padavan-ng/trunk/images/$FW_FILE_NAME" .
+          echo "BUILD_TIMESTAMP=$(date '+%Y.%m.%d_%H.%M.%S')" >> "$GITHUB_ENV"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v5
         with:
-          name: all_firmware_releases
-          path: release
-
-      - name: Upload artifact ${{ matrix.file }}
-        uses: actions/upload-artifact@v6
-        with:
-          name: ${{ matrix.file }}
-          path: release/${{ matrix.file }}
+          name: padavan-ng_${{ env.CONFIG_VENDOR }}_${{ env.CONFIG_FIRMWARE_PRODUCT_ID }}_${{ env.BUILD_TIMESTAMP }}
           retention-days: 7
+          path: |
+            ${{ env.FW_FILE_NAME }}
+            build_R3G.config
+
+      - name: Check firmware size
+        run: |
+          partitions="padavan-ng/trunk/configs/boards/$CONFIG_VENDOR/$CONFIG_FIRMWARE_PRODUCT_ID/partitions.config"
+          max_fw_size="$(awk '/Firmware/ { getline; getline; sub(",", ""); print strtonum($2); }' "$partitions")"
+          fw_size="$(stat -c %s "$FW_FILE_NAME")"
+
+          if (( fw_size > max_fw_size )); then
+            fw_size_fmtd="$(numfmt --grouping "$fw_size") bytes"
+            max_fw_size_fmtd="$(numfmt --grouping "$max_fw_size") bytes"
+            echo "Firmware size ($fw_size_fmtd) exceeds max size ($max_fw_size_fmtd) for your target device"
+            exit 1
+          fi
