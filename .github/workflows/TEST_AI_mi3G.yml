@@ -15,9 +15,11 @@ jobs:
     defaults:
       run:
         shell: bash
+
     steps:
-      - uses: actions/checkout@v6
-    
+      - uses: actions/checkout@v5
+
+      # Опциональная подготовка инструментов (чаще всего в контейнере уже всё есть)
       - name: Set up build tools
         run: |
           sudo apt update
@@ -32,7 +34,7 @@ jobs:
               libgmp3-dev libmpfr-dev libarchive-tools libblkid-dev
           sudo locale-gen --no-purge en_US.UTF-8 ru_RU.UTF-8
           export LANG="en_US.UTF-8"
-          export LC_ALL="en_US.UTF-8"    
+          export LC_ALL="en_US.UTF-8"
 
       - name: Get variables
         run: |
@@ -52,27 +54,114 @@ jobs:
           git config --global --add safe.directory '*'
           git clone -b "$PADAVAN_BRANCH" "$PADAVAN_REPO"
           git -C padavan-ng checkout "$PADAVAN_COMMIT"
-          wget -qO- "$PADAVAN_TOOLCHAIN_URL" | tar -C padavan-ng --zstd -xf -
 
-      - name: Override nfqws files from nilabsent/padavan-ng
+          ARCH=""
+          case "$PADAVAN_TOOLCHAIN_URL" in
+            *.tzst|*.tar.zst) ARCH="--zstd" ;;
+            *.txz|*.tar.xz)   ARCH="--xz"   ;;
+          esac
+          wget -qO- "$PADAVAN_TOOLCHAIN_URL" | tar -C padavan-ng $ARCH -xf - || :
+
+      - name: Build toolchain if missing
+        if: ${{ hashFiles('padavan-ng/toolchain/out/mipsel-linux-uclibc/sysroot/lib/libuClibc-*.so') == '' }}
         run: |
-          cd padavan-ng/trunk/user/nfqws
+          cd padavan-ng/toolchain
+          ./clean_sources.sh
+          ./build_toolchain.sh
 
-          echo "=== Downloading nfqws Makefile from nilabsent/padavan-ng ==="
-          curl -fsSL "https://raw.githubusercontent.com/nilabsent/padavan-ng/refs/heads/master/trunk/user/nfqws/Makefile" -o Makefile
+      - name: Replace nfqws from nilabsent/padavan-ng
+        run: |
+          set -e
+          cd padavan-ng/trunk/user
 
-          echo "=== Downloading firmware-specific.patch from nilabsent/padavan-ng ==="
-          curl -fsSL "https://github.com/nilabsent/padavan-ng/raw/refs/heads/master/trunk/user/nfqws/patches/firmware-specific.patch" -o patches/firmware-specific.patch
+          echo "=== Replacing nfqws directory ==="
+          rm -rf nfqws
+          mkdir -p nfqws
+          cd nfqws
 
-          echo "=== Downloading zapret.sh from nilabsent/padavan-ng ==="
-          curl -fsSL "https://raw.githubusercontent.com/nilabsent/padavan-ng/refs/heads/master/trunk/user/nfqws/zapret.sh" -o zapret.sh
-          chmod +x zapret.sh
+          BASE_URL="https://raw.githubusercontent.com/nilabsent/padavan-ng/refs/heads/master/trunk/user/nfqws"
 
-          echo "=== nfqws Makefile (from nilabsent) ==="
-          sed -n '1,60p' Makefile || true
+          echo "=== Downloading top-level nfqws files ==="
+          curl -fsSL "$BASE_URL/Makefile"  -o Makefile
+          curl -fsSL "$BASE_URL/zapret.sh" -o zapret.sh
+          chmod +x zapret.sh || true
 
-          echo "=== firmware-specific.patch (from nilabsent) ==="
-          cat patches/firmware-specific.patch || true
+          curl -fsSL "$BASE_URL/zapret-72.12.tar.gz" -o zapret-72.12.tar.gz || true
+
+          echo "=== Downloading nfqws patches/ ==="
+          mkdir -p patches
+          curl -fsSL "$BASE_URL/patches/firmware-specific.patch" -o patches/firmware-specific.patch
+
+          echo "=== Downloading nfqws config/ ==="
+          mkdir -p config/fake
+
+          curl -fsSL "$BASE_URL/config/exclude.list"    -o config/exclude.list
+          curl -fsSL "$BASE_URL/config/post_script.sh"  -o config/post_script.sh
+          curl -fsSL "$BASE_URL/config/strategy"        -o config/strategy
+          curl -fsSL "$BASE_URL/config/strategy0"       -o config/strategy0
+          curl -fsSL "$BASE_URL/config/strategy1"       -o config/strategy1
+          curl -fsSL "$BASE_URL/config/strategy2"       -o config/strategy2
+          curl -fsSL "$BASE_URL/config/strategy3"       -o config/strategy3
+          curl -fsSL "$BASE_URL/config/strategy4"       -o config/strategy4
+          curl -fsSL "$BASE_URL/config/strategy5"       -o config/strategy5
+          curl -fsSL "$BASE_URL/config/strategy6"       -o config/strategy6
+          curl -fsSL "$BASE_URL/config/strategy7"       -o config/strategy7
+          curl -fsSL "$BASE_URL/config/strategy8"       -o config/strategy8
+          curl -fsSL "$BASE_URL/config/strategy9"       -o config/strategy9
+          curl -fsSL "$BASE_URL/config/user.list"       -o config/user.list
+
+          curl -fsSL "$BASE_URL/config/fake/hosts"      -o config/fake/hosts || true
+          curl -fsSL "$BASE_URL/config/fake/iplist"     -o config/fake/iplist || true
+
+          echo "=== nfqws tree from nilabsent ==="
+          ls -R .
+
+      - name: Replace nfqws2 from nilabsent/padavan-ng
+        run: |
+          set -e
+          cd padavan-ng/trunk/user
+
+          echo "=== Replacing nfqws2 directory ==="
+          rm -rf nfqws2
+          mkdir -p nfqws2
+          cd nfqws2
+
+          BASE2_URL="https://raw.githubusercontent.com/nilabsent/padavan-ng/refs/heads/master/trunk/user/nfqws2"
+
+          echo "=== Downloading top-level nfqws2 files ==="
+          curl -fsSL "$BASE2_URL/Makefile"   -o Makefile
+          curl -fsSL "$BASE2_URL/zapret2.sh" -o zapret2.sh || curl -fsSL "$BASE2_URL/zapret.sh" -o zapret2.sh || true
+          chmod +x zapret2.sh || true
+
+          curl -fsSL "$BASE2_URL/zapret-72.12.tar.gz" -o zapret-72.12.tar.gz || true
+
+          echo "=== Downloading nfqws2 patches/ (if exists) ==="
+          mkdir -p patches
+          curl -fsSL "$BASE2_URL/patches/firmware-specific.patch" -o patches/firmware-specific.patch || true
+
+          echo "=== Downloading nfqws2 config/ ==="
+          mkdir -p config/fake
+
+          curl -fsSL "$BASE2_URL/config/exclude.list"    -o config/exclude.list    || true
+          curl -fsSL "$BASE2_URL/config/post_script.sh"  -o config/post_script.sh  || true
+          curl -fsSL "$BASE2_URL/config/strategy"        -o config/strategy        || true
+          curl -fsSL "$BASE2_URL/config/strategy0"       -o config/strategy0       || true
+          curl -fsSL "$BASE2_URL/config/strategy1"       -o config/strategy1       || true
+          curl -fsSL "$BASE2_URL/config/strategy2"       -o config/strategy2       || true
+          curl -fsSL "$BASE2_URL/config/strategy3"       -o config/strategy3       || true
+          curl -fsSL "$BASE2_URL/config/strategy4"       -o config/strategy4       || true
+          curl -fsSL "$BASE2_URL/config/strategy5"       -o config/strategy5       || true
+          curl -fsSL "$BASE2_URL/config/strategy6"       -o config/strategy6       || true
+          curl -fsSL "$BASE2_URL/config/strategy7"       -o config/strategy7       || true
+          curl -fsSL "$BASE2_URL/config/strategy8"       -o config/strategy8       || true
+          curl -fsSL "$BASE2_URL/config/strategy9"       -o config/strategy9       || true
+          curl -fsSL "$BASE2_URL/config/user.list"       -o config/user.list       || true
+
+          curl -fsSL "$BASE2_URL/config/fake/hosts"      -o config/fake/hosts || true
+          curl -fsSL "$BASE2_URL/config/fake/iplist"     -o config/fake/iplist || true
+
+          echo "=== nfqws2 tree from nilabsent ==="
+          ls -R .
 
       - name: Install themes
         run: |
@@ -89,12 +178,12 @@ jobs:
       - name: Run custom pre-build script
         run: '[[ -f pre-build.sh ]] && . pre-build.sh || :'
 
-      - name: Initial nfqws zapret presence check
+      - name: nfqws / zapret presence check BEFORE build
         run: |
           cd padavan-ng/trunk/user/nfqws
-          echo "=== nfqws directory listing BEFORE first build ==="
-          ls -al || true
-          echo "=== zapret* tarballs BEFORE first build ==="
+          echo "=== nfqws directory listing BEFORE build ==="
+          ls -al
+          echo "=== zapret* tarballs BEFORE build ==="
           ls -al zapret-*.tar.gz || echo "no zapret-*.tar.gz found (will be downloaded on first nfqws build)"
 
       - name: Build firmware R3G
@@ -109,7 +198,7 @@ jobs:
           [[ -n $FW_FILE_NAME ]] || { echo "Firmware file not found"; exit 1; }
           echo "FW_FILE_NAME=$FW_FILE_NAME" >> "$GITHUB_ENV"
 
-      - name: Verify zapret download and extraction after build
+      - name: nfqws / zapret presence check AFTER build
         run: |
           cd padavan-ng/trunk/user/nfqws
 
@@ -119,7 +208,6 @@ jobs:
           echo "=== zapret* tarballs AFTER build ==="
           ls -al zapret-*.tar.gz || echo "no zapret-*.tar.gz found"
 
-          # Попробуем автоматически угадать директорию zapret-XX.YY
           ZAPRET_DIR="$(ls -d zapret-* 2>/dev/null | head -n1 || true)"
           if [ -n "$ZAPRET_DIR" ] && [ -d "$ZAPRET_DIR" ]; then
             echo "=== content of $ZAPRET_DIR ==="
@@ -129,7 +217,7 @@ jobs:
             echo "=== $ZAPRET_DIR/tpws/Makefile ==="
             cat "$ZAPRET_DIR/tpws/Makefile" || echo "no tpws/Makefile"
           else
-            echo "No zapret-*/ directory found after build"
+            echo "No zapret-*/ directory found after build (nfqws might not have been built)"
           fi
 
       - name: Run custom post-build script
