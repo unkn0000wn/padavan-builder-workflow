@@ -65,19 +65,14 @@ jobs:
           # подставляем версию zapret
           sed -i "s/^SRC_VER = .*/SRC_VER = $VER_NO_V/" Makefile
 
-      - name: Rewrite firmware-specific.patch for zapret-72.12
+      - name: Rewrite nfqws patches for zapret-72.12
         run: |
           cd padavan-ng/trunk/user/nfqws/patches
-
-          if [ ! -f firmware-specific.patch ]; then
-            echo "firmware-specific.patch not found, nothing to rewrite"
-            exit 0
-          fi
 
           echo "=== firmware-specific.patch BEFORE ==="
           sed -n '1,40p' firmware-specific.patch || true
 
-          # правим цели патча: 71.2 -> 72.12
+          # firmware-specific.patch: 71.2 -> 72.12
           sed -i \
             -e 's@zapret-71\.2\.orig/@zapret-72.12.orig/@g' \
             -e 's@zapret-71\.2/@zapret-72.12/@g' \
@@ -85,6 +80,22 @@ jobs:
 
           echo "=== firmware-specific.patch AFTER ==="
           sed -n '1,40p' firmware-specific.patch || true
+
+          if [ -f nfqws-ipv6-support.patch ]; then
+            echo "=== nfqws-ipv6-support.patch BEFORE ==="
+            sed -n '1,40p' nfqws-ipv6-support.patch || true
+
+            # nfqws-ipv6-support.patch: zapret-71 -> zapret-72.12
+            sed -i \
+              -e 's@zapret-71\.orig/@zapret-72.12.orig/@g' \
+              -e 's@zapret-71/@zapret-72.12/@g' \
+              nfqws-ipv6-support.patch
+
+            echo "=== nfqws-ipv6-support.patch AFTER ==="
+            sed -n '1,40p' nfqws-ipv6-support.patch || true
+          else
+            echo "nfqws-ipv6-support.patch not found, skipping"
+          fi
 
       - name: Install themes
         run: |
