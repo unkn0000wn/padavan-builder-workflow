@@ -93,24 +93,6 @@ jobs:
         done
 
 #####
-    - name: Strip all LTO flags from zapret Makefiles
-      run: |
-        cd padavan-ng/trunk/user/nfqws
-
-        # на случай, если каталога ещё нет, форсим распаковку исходников
-        if [ ! -d "$SRC_NAME" ]; then
-          make -C . download_test extract_test || true
-        fi
-
-        # чистим -flto и любые его вариации во всех Makefile внутри zapret-*
-        find . -maxdepth 2 -type f -name 'Makefile' -path './zapret-*/*' -print | while read -r mk; do
-          echo "Stripping LTO from $mk"
-          sed -i 's/-flto=[^[:space:]]*//g;s/-flto//g;s/-fno-fat-lto-objects//g' "$mk" || true
-        done
-
-        echo "=== nfq Makefile after strip ==="
-        sed -n '1,120p' zapret-*/nfq/Makefile || true
-
 ######### 1
 
     - name: Strip all LTO flags and duplicate block from zapret nfq Makefile
