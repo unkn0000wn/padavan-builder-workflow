@@ -16,7 +16,23 @@ jobs:
       run:
         shell: bash
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
+    
+      - name: Set up build tools
+        run: |
+          sudo apt update
+          sudo apt install --no-install-recommends -y \
+              autoconf automake autopoint cmake \
+              bison build-essential flex gawk \
+              gettext git gperf libtool libtool-bin \
+              pkg-config fakeroot kmod cpio doxygen \
+              texinfo help2man libncurses5-dev \
+              zlib1g-dev libsqlite3-dev gcc-multilib \
+              curl dos2unix unzip wget locales xxd libltdl-dev \
+              libgmp3-dev libmpfr-dev libarchive-tools libblkid-dev
+          sudo locale-gen --no-purge en_US.UTF-8 ru_RU.UTF-8
+          export LANG="en_US.UTF-8"
+          export LC_ALL="en_US.UTF-8"    
 
       - name: Get variables
         run: |
