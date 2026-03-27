@@ -1,12 +1,14 @@
+### hadzhioglu Builder
 #PADAVAN_REPO="https://gitlab.com/hadzhioglu/padavan-ng.git"
-
-### https://github.com/nilabsent/padavan-ng/blob/master/Dockerfile
-PADAVAN_REPO="https://github.com/nilabsent/padavan-ng.git"
-PADAVAN_BRANCH="master"
-PADAVAN_COMMIT="HEAD"
+#PADAVAN_BRANCH="master"
+#PADAVAN_COMMIT="HEAD"
 #PADAVAN_TOOLCHAIN_URL="https://gitlab.com/api/v4/projects/hadzhioglu%2Fpadavan-ng/packages/generic/toolchain/latest/toolchain.tzst"
-PADAVAN_TOOLCHAIN_URL="https://gitlab.com/api/v4/projects/nilabsent%2Fpadavan-ng/packages/generic/toolchain/latest/toolchain.tzst"
 
+### nilabsent Builder
+PADAVAN_REPO=https://github.com/nilabsent/padavan-ng
+PADAVAN_BRANCH=master
+PADAVAN_COMMIT=HEAD
+PADAVAN_TOOLCHAIN_URL=https://github.com/nilabsent/padavan-ng-builder/releases/download/release-2026.03.04_15.22.25/toolchain_uClibc-ng-1.0.57.tar.xz
 
 
 PADAVAN_THEMES_REPO="https://gitlab.com/hadzhioglu/padavan-themes.git"
@@ -21,7 +23,3 @@ PADAVAN_THEMES=(
 #  white
 #  yellow
 )
-
-# ZAPRET_REPO="https://github.com/bol-van/zapret.git"
-# ZAPRET_BRANCH="master"   # или другая ветка, которая тебе нужна
-# ZAPRET_DIR="zapret-71.4"
