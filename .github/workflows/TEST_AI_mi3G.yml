@@ -64,7 +64,11 @@ jobs:
           echo "Will use zapret version: $VER_NO_V"
           echo "Expected zapret source dir: $SRC_DIR_NAME"
 
-          sed -i "s/^SRC_VER = .*/SRC_VER = $VER_NO_V/" Makefile
+          sed -i \
+            -e "s/^SRC_VER *= *.*/SRC_VER = $VER_NO_V/" \
+            -e "s/^SRC_NAME *= *.*/SRC_NAME = zapret-\$(SRC_VER)/" \
+            -e "s|^SRC_URL *= *.*|SRC_URL = https://github.com/bol-van/zapret/archive/refs/tags/v\$(SRC_VER).tar.gz|" \
+            Makefile
 
           echo "=== nfqws Makefile AFTER ==="
           sed -n '1,40p' Makefile || true
@@ -121,35 +125,20 @@ jobs:
       - name: Run custom pre-build script
         run: '[[ -f pre-build.sh ]] && . pre-build.sh || :'
 
-      - name: Prepare nfqws zapret sources
+      - name: Initial nfqws zapret presence check
         run: |
           cd padavan-ng/trunk/user/nfqws
-          echo "=== running make download extract in nfqws ==="
-          make download extract V=1 || make download V=1 && make extract V=1 || echo "make download/extract failed, check above log"
-
-      - name: Verify zapret tarball, sources and Makefiles in nfqws
-        run: |
-          cd padavan-ng/trunk/user/nfqws
-
-          echo "=== nfqws directory listing BEFORE firmware build ==="
-          ls -al
-
-          echo "=== zapret* tarballs BEFORE firmware build ==="
-          ls -al zapret-*.tar.gz || echo "no zapret-*.tar.gz found"
-
+          echo "=== nfqws directory listing BEFORE first build ==="
+          ls -al || true
+          echo "=== zapret* tarballs BEFORE first build ==="
+          ls -al zapret-*.tar.gz || echo "no zapret-*.tar.gz found (will be downloaded on first nfqws build)"
           if [ -n "${ZAPRET_SRC_DIR:-}" ]; then
-            echo "=== content of ${ZAPRET_SRC_DIR} BEFORE firmware build (if exists) ==="
+            echo "=== ${ZAPRET_SRC_DIR} BEFORE first build (if exists) ==="
             if [ -d "${ZAPRET_SRC_DIR}" ]; then
               ls -al "${ZAPRET_SRC_DIR}"
-              echo "=== ${ZAPRET_SRC_DIR}/nfq/Makefile ==="
-              cat "${ZAPRET_SRC_DIR}/nfq/Makefile" || echo "no nfq/Makefile"
-              echo "=== ${ZAPRET_SRC_DIR}/tpws/Makefile ==="
-              cat "${ZAPRET_SRC_DIR}/tpws/Makefile" || echo "no tpws/Makefile"
             else
-              echo "Directory ${ZAPRET_SRC_DIR} not found"
+              echo "Directory ${ZAPRET_SRC_DIR} not found (will be created on first nfqws build)"
             fi
-          else
-            echo "ZAPRET_SRC_DIR is not set, cannot check unpacked zapret directory"
           fi
 
       - name: Build firmware R3G
@@ -163,6 +152,31 @@ jobs:
                           -printf '%T@\t%f\n' | sort -V | tail -1 | cut -f2)"
           [[ -n $FW_FILE_NAME ]] || { echo "Firmware file not found"; exit 1; }
           echo "FW_FILE_NAME=$FW_FILE_NAME" >> "$GITHUB_ENV"
+
+      - name: Verify zapret download and extraction after build
+        run: |
+          cd padavan-ng/trunk/user/nfqws
+
+          echo "=== nfqws directory listing AFTER build ==="
+          ls -al
+
+          echo "=== zapret* tarballs AFTER build ==="
+          ls -al zapret-*.tar.gz || echo "no zapret-*.tar.gz found"
+
+          if [ -n "${ZAPRET_SRC_DIR:-}" ]; then
+            echo "=== ${ZAPRET_SRC_DIR} AFTER build (if exists) ==="
+            if [ -d "${ZAPRET_SRC_DIR}" ]; then
+              ls -al "${ZAPRET_SRC_DIR}"
+              echo "=== ${ZAPRET_SRC_DIR}/nfq/Makefile ==="
+              cat "${ZAPRET_SRC_DIR}/nfq/Makefile" || echo "no nfq/Makefile"
+              echo "=== ${ZAPRET_SRC_DIR}/tpws/Makefile ==="
+              cat "${ZAPRET_SRC_DIR}/tpws/Makefile" || echo "no tpws/Makefile"
+            else
+              echo "Directory ${ZAPRET_SRC_DIR} still not found — nfqws build may not have been triggered"
+            fi
+          else
+            echo "ZAPRET_SRC_DIR is not set, cannot check unpacked zapret directory"
+          fi
 
       - name: Run custom post-build script
         run: '[[ -f post-build.sh ]] && . post-build.sh || :'
