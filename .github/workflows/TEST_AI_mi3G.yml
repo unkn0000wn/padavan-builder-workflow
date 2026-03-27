@@ -38,77 +38,25 @@ jobs:
           git -C padavan-ng checkout "$PADAVAN_COMMIT"
           wget -qO- "$PADAVAN_TOOLCHAIN_URL" | tar -C padavan-ng --zstd -xf -
 
-      - name: Detect latest zapret v7* tag and patch nfqws Makefile
+      - name: Override nfqws files from nilabsent/padavan-ng
         run: |
           cd padavan-ng/trunk/user/nfqws
 
-          echo "=== Fetching zapret tags page ==="
-          PAGE=$(curl -fsSL https://github.com/bol-van/zapret/tags || true)
+          echo "=== Downloading nfqws Makefile from nilabsent/padavan-ng ==="
+          curl -fsSL "https://raw.githubusercontent.com/nilabsent/padavan-ng/refs/heads/master/trunk/user/nfqws/Makefile" -o Makefile
 
-          LATEST_TAG=$(
-            printf '%s\n' "$PAGE" |
-              grep -oE 'v7[0-9]+\.[0-9]+' |
-              head -n1 || true
-          )
+          echo "=== Downloading firmware-specific.patch from nilabsent/padavan-ng ==="
+          curl -fsSL "https://github.com/nilabsent/padavan-ng/raw/refs/heads/master/trunk/user/nfqws/patches/firmware-specific.patch" -o patches/firmware-specific.patch
 
-          echo "Raw LATEST_TAG from /tags: '$LATEST_TAG'"
+          echo "=== Downloading zapret.sh from nilabsent/padavan-ng ==="
+          curl -fsSL "https://raw.githubusercontent.com/nilabsent/padavan-ng/refs/heads/master/trunk/user/nfqws/zapret.sh" -o zapret.sh
+          chmod +x zapret.sh
 
-          if [ -z "$LATEST_TAG" ]; then
-            echo "ERROR: failed to detect latest v7* tag from /tags"
-            exit 1
-          fi
+          echo "=== nfqws Makefile (from nilabsent) ==="
+          sed -n '1,60p' Makefile || true
 
-          VER_NO_V=$(printf '%s\n' "$LATEST_TAG" | sed -E 's/^v//')
-          SRC_DIR_NAME="zapret-$VER_NO_V"
-
-          echo "Will use zapret version: $VER_NO_V"
-          echo "Expected zapret source dir: $SRC_DIR_NAME"
-
-          sed -i \
-            -e "s/^SRC_VER *= *.*/SRC_VER = $VER_NO_V/" \
-            -e "s/^SRC_NAME *= *.*/SRC_NAME = zapret-\$(SRC_VER)/" \
-            -e "s|^SRC_URL *= *.*|SRC_URL = https://github.com/bol-van/zapret/archive/refs/tags/v\$(SRC_VER).tar.gz|" \
-            Makefile
-
-          echo "=== nfqws Makefile AFTER ==="
-          sed -n '1,40p' Makefile || true
-
-          echo "ZAPRET_SRC_DIR=$SRC_DIR_NAME" >> "$GITHUB_ENV"
-
-      - name: Rewrite nfqws patches for detected zapret version
-        run: |
-          cd padavan-ng/trunk/user/nfqws/patches
-
-          if [ -z "${ZAPRET_SRC_DIR:-}" ]; then
-            echo "ZAPRET_SRC_DIR is not set"
-            exit 1
-          fi
-
-          echo "Patching nfqws patches for zapret dir: $ZAPRET_SRC_DIR"
-
-          if [ -f firmware-specific.patch ]; then
-            sed -i \
-              -e "s@zapret-71\.2\.orig/@${ZAPRET_SRC_DIR}.orig/@g" \
-              -e "s@zapret-71\.2/@${ZAPRET_SRC_DIR}/@g" \
-              firmware-specific.patch
-
-            echo "=== firmware-specific.patch AFTER (full) ==="
-            cat firmware-specific.patch || true
-          else
-            echo "firmware-specific.patch not found, skipping"
-          fi
-
-          if [ -f nfqws-ipv6-support.patch ]; then
-            sed -i \
-              -e "s@zapret-71\.orig/@${ZAPRET_SRC_DIR}.orig/@g" \
-              -e "s@zapret-71/@${ZAPRET_SRC_DIR}/@g" \
-              nfqws-ipv6-support.patch
-
-            echo "=== nfqws-ipv6-support.patch AFTER (full) ==="
-            cat nfqws-ipv6-support.patch || true
-          else
-            echo "nfqws-ipv6-support.patch not found, skipping"
-          fi
+          echo "=== firmware-specific.patch (from nilabsent) ==="
+          cat patches/firmware-specific.patch || true
 
       - name: Install themes
         run: |
@@ -132,14 +80,6 @@ jobs:
           ls -al || true
           echo "=== zapret* tarballs BEFORE first build ==="
           ls -al zapret-*.tar.gz || echo "no zapret-*.tar.gz found (will be downloaded on first nfqws build)"
-          if [ -n "${ZAPRET_SRC_DIR:-}" ]; then
-            echo "=== ${ZAPRET_SRC_DIR} BEFORE first build (if exists) ==="
-            if [ -d "${ZAPRET_SRC_DIR}" ]; then
-              ls -al "${ZAPRET_SRC_DIR}"
-            else
-              echo "Directory ${ZAPRET_SRC_DIR} not found (will be created on first nfqws build)"
-            fi
-          fi
 
       - name: Build firmware R3G
         run: |
@@ -163,19 +103,17 @@ jobs:
           echo "=== zapret* tarballs AFTER build ==="
           ls -al zapret-*.tar.gz || echo "no zapret-*.tar.gz found"
 
-          if [ -n "${ZAPRET_SRC_DIR:-}" ]; then
-            echo "=== ${ZAPRET_SRC_DIR} AFTER build (if exists) ==="
-            if [ -d "${ZAPRET_SRC_DIR}" ]; then
-              ls -al "${ZAPRET_SRC_DIR}"
-              echo "=== ${ZAPRET_SRC_DIR}/nfq/Makefile ==="
-              cat "${ZAPRET_SRC_DIR}/nfq/Makefile" || echo "no nfq/Makefile"
-              echo "=== ${ZAPRET_SRC_DIR}/tpws/Makefile ==="
-              cat "${ZAPRET_SRC_DIR}/tpws/Makefile" || echo "no tpws/Makefile"
-            else
-              echo "Directory ${ZAPRET_SRC_DIR} still not found — nfqws build may not have been triggered"
-            fi
+          # Попробуем автоматически угадать директорию zapret-XX.YY
+          ZAPRET_DIR="$(ls -d zapret-* 2>/dev/null | head -n1 || true)"
+          if [ -n "$ZAPRET_DIR" ] && [ -d "$ZAPRET_DIR" ]; then
+            echo "=== content of $ZAPRET_DIR ==="
+            ls -al "$ZAPRET_DIR"
+            echo "=== $ZAPRET_DIR/nfq/Makefile ==="
+            cat "$ZAPRET_DIR/nfq/Makefile" || echo "no nfq/Makefile"
+            echo "=== $ZAPRET_DIR/tpws/Makefile ==="
+            cat "$ZAPRET_DIR/tpws/Makefile" || echo "no tpws/Makefile"
           else
-            echo "ZAPRET_SRC_DIR is not set, cannot check unpacked zapret directory"
+            echo "No zapret-*/ directory found after build"
           fi
 
       - name: Run custom post-build script
