@@ -101,6 +101,28 @@ jobs:
           echo "=== nfqws tree from nilabsent ==="
           ls -R .
 
+      - name: Patch nfqws Makefile to install fake
+        run: |
+          set -e
+          cd padavan-ng/trunk/user/nfqws
+
+          NFQWS_MK="Makefile"
+
+          if ! grep -q 'config/fake' "$NFQWS_MK"; then
+            echo "Patching nfqws Makefile to install config/fake into /usr/share/zapret/fake"
+            awk '
+              /romfs:/ {
+                print $0;
+                print "\t[ -d config/fake ] && $(ROMFSINST) config/fake /usr/share/zapret/fake || true";
+                next
+              }
+              { print $0 }
+            ' "$NFQWS_MK" > "$NFQWS_MK.new"
+            mv "$NFQWS_MK.new" "$NFQWS_MK"
+          else
+            echo "nfqws Makefile already mentions config/fake, skip patch"
+          fi
+
       - name: Replace nfqws2 from nilabsent/padavan-ng
         run: |
           set -e
@@ -150,6 +172,28 @@ jobs:
 
           echo "=== nfqws2 tree from nilabsent ==="
           ls -R .
+
+      - name: Patch nfqws2 Makefile to install fake
+        run: |
+          set -e
+          cd padavan-ng/trunk/user/nfqws2
+
+          NFQWS2_MK="Makefile"
+
+          if ! grep -q 'config/fake' "$NFQWS2_MK"; then
+            echo "Patching nfqws2 Makefile to install config/fake into /usr/share/zapret2/fake"
+            awk '
+              /romfs:/ {
+                print $0;
+                print "\t[ -d config/fake ] && $(ROMFSINST) config/fake /usr/share/zapret2/fake || true";
+                next
+              }
+              { print $0 }
+            ' "$NFQWS2_MK" > "$NFQWS2_MK.new"
+            mv "$NFQWS2_MK.new" "$NFQWS2_MK"
+          else
+            echo "nfqws2 Makefile already mentions config/fake, skip patch"
+          fi
 
       - name: Install themes
         run: |
