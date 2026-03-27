@@ -169,16 +169,28 @@ jobs:
       - name: nfqws / zapret presence check BEFORE build
         run: |
           cd padavan-ng/trunk/user/nfqws
-          echo "=== nfqws directory listing BEFORE build ==="
+          echo "=== nfqws directory listing BEFORE build (top) ==="
           ls -al
+          echo "=== nfqws/config BEFORE build ==="
+          ls -al config || echo "no config dir"
+          echo "=== nfqws/config/fake BEFORE build ==="
+          ls -al config/fake || echo "no config/fake dir"
+          echo "=== nfqws tree (recursive) BEFORE build ==="
+          ls -R .
           echo "=== zapret* tarballs BEFORE build ==="
           ls -al zapret-*.tar.gz || echo "no zapret-*.tar.gz found (will be downloaded on first nfqws build)"
 
       - name: nfqws2 / zapret2 presence check BEFORE build
         run: |
           cd padavan-ng/trunk/user/nfqws2
-          echo "=== nfqws2 directory listing BEFORE build ==="
+          echo "=== nfqws2 directory listing BEFORE build (top) ==="
           ls -al
+          echo "=== nfqws2/config BEFORE build ==="
+          ls -al config || echo "no config dir"
+          echo "=== nfqws2/config/fake BEFORE build ==="
+          ls -al config/fake || echo "no config/fake dir"
+          echo "=== nfqws2 tree (recursive) BEFORE build ==="
+          ls -R .
           echo "=== zapret2* tarballs BEFORE build ==="
           ls -al zapret2-*.tar.gz || echo "no zapret2-*.tar.gz found (will be used from repo or downloaded by build)"
 
