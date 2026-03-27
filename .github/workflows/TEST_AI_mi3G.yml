@@ -42,6 +42,7 @@ jobs:
         run: |
           cd padavan-ng/trunk/user/nfqws
 
+          echo "=== Fetching zapret tags page ==="
           PAGE=$(curl -fsSL https://github.com/bol-van/zapret/tags || true)
 
           LATEST_TAG=$(
@@ -50,7 +51,7 @@ jobs:
               head -n1 || true
           )
 
-          echo "Raw LATEST_TAG: '$LATEST_TAG'"
+          echo "Raw LATEST_TAG from /tags: '$LATEST_TAG'"
 
           if [ -z "$LATEST_TAG" ]; then
             echo "ERROR: failed to detect latest v7* tag from /tags"
@@ -60,9 +61,16 @@ jobs:
           VER_NO_V=$(printf '%s\n' "$LATEST_TAG" | sed -E 's/^v//')
           SRC_DIR_NAME="zapret-$VER_NO_V"
 
-          echo "Using zapret version: $VER_NO_V (dir: $SRC_DIR_NAME)"
+          echo "Will use zapret version: $VER_NO_V"
+          echo "Expected zapret source dir: $SRC_DIR_NAME"
+
+          echo "=== nfqws Makefile BEFORE ==="
+          sed -n '1,40p' Makefile || true
 
           sed -i "s/^SRC_VER = .*/SRC_VER = $VER_NO_V/" Makefile
+
+          echo "=== nfqws Makefile AFTER ==="
+          sed -n '1,40p' Makefile || true
 
           echo "ZAPRET_SRC_DIR=$SRC_DIR_NAME" >> "$GITHUB_ENV"
 
@@ -78,17 +86,33 @@ jobs:
           echo "Patching nfqws patches for zapret dir: $ZAPRET_SRC_DIR"
 
           if [ -f firmware-specific.patch ]; then
+            echo "=== firmware-specific.patch BEFORE ==="
+            sed -n '1,60p' firmware-specific.patch || true
+
             sed -i \
               -e "s@zapret-71\.2\.orig/@${ZAPRET_SRC_DIR}.orig/@g" \
               -e "s@zapret-71\.2/@${ZAPRET_SRC_DIR}/@g" \
               firmware-specific.patch
+
+            echo "=== firmware-specific.patch AFTER ==="
+            sed -n '1,60p' firmware-specific.patch || true
+          else
+            echo "firmware-specific.patch not found, skipping"
           fi
 
           if [ -f nfqws-ipv6-support.patch ]; then
+            echo "=== nfqws-ipv6-support.patch BEFORE ==="
+            sed -n '1,60p' nfqws-ipv6-support.patch || true
+
             sed -i \
               -e "s@zapret-71\.orig/@${ZAPRET_SRC_DIR}.orig/@g" \
               -e "s@zapret-71/@${ZAPRET_SRC_DIR}/@g" \
               nfqws-ipv6-support.patch
+
+            echo "=== nfqws-ipv6-support.patch AFTER ==="
+            sed -n '1,60p' nfqws-ipv6-support.patch || true
+          else
+            echo "nfqws-ipv6-support.patch not found, skipping"
           fi
 
       - name: Install themes
