@@ -64,9 +64,6 @@ jobs:
           echo "Will use zapret version: $VER_NO_V"
           echo "Expected zapret source dir: $SRC_DIR_NAME"
 
-          echo "=== nfqws Makefile BEFORE ==="
-          sed -n '1,40p' Makefile || true
-
           sed -i "s/^SRC_VER = .*/SRC_VER = $VER_NO_V/" Makefile
 
           echo "=== nfqws Makefile AFTER ==="
@@ -86,31 +83,31 @@ jobs:
           echo "Patching nfqws patches for zapret dir: $ZAPRET_SRC_DIR"
 
           if [ -f firmware-specific.patch ]; then
-            echo "=== firmware-specific.patch BEFORE ==="
-            sed -n '1,60p' firmware-specific.patch || true
-
             sed -i \
               -e "s@zapret-71\.2\.orig/@${ZAPRET_SRC_DIR}.orig/@g" \
               -e "s@zapret-71\.2/@${ZAPRET_SRC_DIR}/@g" \
               firmware-specific.patch
 
-            echo "=== firmware-specific.patch AFTER ==="
-            sed -n '1,60p' firmware-specific.patch || true
+            echo "=== firmware-specific.patch LINES WITH ${ZAPRET_SRC_DIR}* AFTER ==="
+            grep -n "${ZAPRET_SRC_DIR}" firmware-specific.patch || echo "no ${ZAPRET_SRC_DIR}* lines found"
+
+            echo "=== firmware-specific.patch HEAD AFTER ==="
+            sed -n '1,80p' firmware-specific.patch || true
           else
             echo "firmware-specific.patch not found, skipping"
           fi
 
           if [ -f nfqws-ipv6-support.patch ]; then
-            echo "=== nfqws-ipv6-support.patch BEFORE ==="
-            sed -n '1,60p' nfqws-ipv6-support.patch || true
-
             sed -i \
               -e "s@zapret-71\.orig/@${ZAPRET_SRC_DIR}.orig/@g" \
               -e "s@zapret-71/@${ZAPRET_SRC_DIR}/@g" \
               nfqws-ipv6-support.patch
 
-            echo "=== nfqws-ipv6-support.patch AFTER ==="
-            sed -n '1,60p' nfqws-ipv6-support.patch || true
+            echo "=== nfqws-ipv6-support.patch LINES WITH ${ZAPRET_SRC_DIR}* AFTER ==="
+            grep -n "${ZAPRET_SRC_DIR}" nfqws-ipv6-support.patch || echo "no ${ZAPRET_SRC_DIR}* lines found"
+
+            echo "=== nfqws-ipv6-support.patch HEAD AFTER ==="
+            sed -n '1,80p' nfqws-ipv6-support.patch || true
           else
             echo "nfqws-ipv6-support.patch not found, skipping"
           fi
