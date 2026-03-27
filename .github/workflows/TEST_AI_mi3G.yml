@@ -21,8 +21,8 @@ jobs:
 
       - name: Get variables
         run: |
-          sed -i 's|\r$||g' variables build_R3G.config
-          . <(cat variables build_R3G.config)
+          sed -i 's|\r$||g' variables build_nilabsent_MI3G.config
+          . <(cat variables build_nilabsent_MI3G.config)
           PADAVAN_THEMES="${PADAVAN_THEMES[*]}"
           for v in "${!PADAVAN_@}" "${!CONFIG_@}" "${!ZAPRET_@}"; do
             echo "$v=${!v}" >> "$GITHUB_ENV"
@@ -171,7 +171,7 @@ jobs:
 
       - name: Build firmware R3G
         run: |
-          cp build_R3G.config padavan-ng/trunk/.config
+          cp build_nilabsent_MI3G.config padavan-ng/trunk/.config
           cd padavan-ng/trunk
           ./clear_tree.sh
           ./build_firmware.sh
@@ -218,7 +218,7 @@ jobs:
           retention-days: 7
           path: |
             ${{ env.FW_FILE_NAME }}
-            build_R3G.config
+            build_nilabsent_MI3G.config
 
       - name: Check firmware size
         run: |
