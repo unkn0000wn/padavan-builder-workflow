@@ -242,6 +242,13 @@ jobs:
 
           ls -R nfqws2
 
+      - name: Debug nfqws2 build
+        run: |
+          cd padavan-ng-hadzhioglu/trunk
+          echo "=== grep nfqws2 in build logs ==="
+          # если есть общий лог
+          grep -i "nfqws2" -R . || echo "no explicit nfqws2 mentions in logs"
+
 #============================================================================
 
 
@@ -293,7 +300,16 @@ jobs:
           echo "Found firmware: $FW_FILE_NAME"
           echo "FW_FILE_NAME=$FW_FILE_NAME" >> "$GITHUB_ENV"
           
+          echo "=== Check nfqws2 in romfs ==="
+          find padavan-ng-hadzhioglu/trunk/romfs -maxdepth 4 -type f -iname 'nfqws2*' -o -iname 'zapret2*' || true
 
+      - name: Check nfqws2 in romfs
+        run: |
+          cd padavan-ng-hadzhioglu/trunk
+          echo "=== search nfqws2 in romfs ==="
+          find romfs -maxdepth 6 -type f \
+            \( -iname 'nfqws2*' -o -iname 'zapret2*' \) -print || echo "nfqws2 files not found in romfs"
+          
       - name: Run custom post-build script
         run: '[[ -f post-build.sh ]] && . post-build.sh || :'
 
