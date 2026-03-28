@@ -30,75 +30,25 @@ jobs:
             echo "$v=${!v}" >> "$GITHUB_ENV"
           done
 
-      - name: Install dependencies
+      - name: Set up build tools
         run: |
           apt update
-          apt remove '~i (~nclang-tidy|~nswig)' -y
           apt install --no-install-recommends -y \
-                   autoconf \
-                   autoconf-archive \
-                   automake \
-                   autopoint \
-                   bison \
-                   build-essential \
-                   ca-certificates \
-                   cmake \
-                   cpio \
-                   curl \
-                   doxygen \
-                   fakeroot \
-                   flex \
-                   gawk \
-                   gettext \
-                   git \
-                   gperf \
-                   help2man \
-                   kmod \
-                   libblkid-dev \
-                   libc-ares-dev \
-                   libcurl4-openssl-dev \
-                   libdevmapper-dev \
-                   libev-dev \
-                   libevent-dev \
-                   libexif-dev \
-                   libflac-dev \
-                   libgmp3-dev \
-                   libid3tag0-dev \
-                   libidn2-dev \
-                   libjpeg-dev \
-                   libkeyutils-dev \
-                   libltdl-dev \
-                   libmpc-dev \
-                   libmpfr-dev \
-                   libncurses5-dev \
-                   libogg-dev \
-                   libsqlite3-dev \
-                   libssl-dev \
-                   libtool \
-                   libtool-bin \
-                   libudev-dev \
-                   libunbound-dev \
-                   libvorbis-dev \
-                   libxml2-dev \
-                   locales \
-                   pkg-config \
-                   ppp-dev \
-                   python3 \
-                   python3-docutils \
-                   texinfo \
-                   unzip \
-                   uuid \
-                   uuid-dev \
-                   vim \
-                   wget \
-                   xxd \
-                   zlib1g-dev \
-                   zstd
+              autoconf automake autopoint cmake \
+              bison build-essential flex gawk \
+              gettext git gperf libtool libtool-bin \
+              pkg-config fakeroot kmod cpio doxygen \
+              texinfo help2man libncurses5-dev \
+              zlib1g-dev libsqlite3-dev gcc-multilib \
+              curl dos2unix unzip wget locales xxd libltdl-dev \
+              libgmp3-dev libmpfr-dev libarchive-tools libblkid-dev
 
       - name: Update locales
         run: |
           locale-gen --no-purge en_US.UTF-8 ru_RU.UTF-8
-
+          export LANG="en_US.UTF-8"
+          export LC_ALL="en_US.UTF-8"
+          
       - name: Download sources and toolchain
         run: |
           git config --global --add safe.directory '*'
@@ -113,6 +63,7 @@ jobs:
           wget -qO- "$PADAVAN_TOOLCHAIN_URL" | tar -C padavan-ng-hadzhioglu $ARCH -xf - || :
 
       - name: Build toolchain if missing
+        if: false
         run: |
           if [[ ! -f padavan-ng-hadzhioglu/toolchain/out/mipsel-linux-uclibc/sysroot/lib/libuClibc-*.so ]]; then
             cd padavan-ng-hadzhioglu/toolchain
