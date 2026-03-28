@@ -74,6 +74,7 @@ jobs:
           fi
 
       - name: Replace nfqws from nilabsent/padavan-ng
+        if: env.ZAPRET_REPLACE_NFQWS == '1'
         run: |
           set -e
           cd padavan-ng-hadzhioglu/trunk/user
@@ -135,6 +136,7 @@ jobs:
           [[ -f zapret-72.12.tar.gz ]] || { echo "zapret-72.12.tar.gz missing in nfqws"; exit 1; }
 
       - name: Replace nfqws2 from nilabsent/padavan-ng
+        if: env.ZAPRET_REPLACE_NFQWS2 == '1'
         run: |
           set -e
           cd padavan-ng-hadzhioglu/trunk/user
