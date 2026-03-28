@@ -30,9 +30,9 @@ jobs:
 
       - name: Install dependencies
         run: |
-          sudo apt update
-          sudo apt remove '~i (~nclang-tidy|~nswig)' -y
-          sudo apt install --no-install-recommends -y \
+          apt update
+          apt remove '~i (~nclang-tidy|~nswig)' -y
+          apt install --no-install-recommends -y \
                    autoconf \
                    autoconf-archive \
                    automake \
@@ -94,7 +94,7 @@ jobs:
                    zstd
       - name: Update locales
         run: |
-          sudo locale-gen --no-purge en_US.UTF-8 ru_RU.UTF-8
+          locale-gen --no-purge en_US.UTF-8 ru_RU.UTF-8
           echo "LANG=en_US.UTF-8" >> $GITHUB_ENV
           echo "LC_ALL=en_US.UTF-8" >> $GITHUB_ENV
       - name: Download sources and toolchain
