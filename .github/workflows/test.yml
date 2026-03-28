@@ -110,9 +110,9 @@ jobs:
           mkdir -p nfqws2
 
           # Используем тот же архив (если хочется, можно вынести скачивание в отдельный шаг)
-          curl -fsSL "https://github.com/nilabsent/padavan-ng/archive/refs/heads/master.tar.gz" -o /tmp/padavan-ng-nilabsent.tar.gz
+          # curl -fsSL "https://github.com/nilabsent/padavan-ng/archive/refs/heads/master.tar.gz" -o /tmp/padavan-ng-nilabsent.tar.gz
 
-          tar -xzf /tmp/padavan-ng-nilabsent.tar.gz -C /tmp
+          # tar -xzf /tmp/padavan-ng-nilabsent.tar.gz -C /tmp
 
           cp -a /tmp/padavan-ng-master/trunk/user/nfqws2/. nfqws2/
 
