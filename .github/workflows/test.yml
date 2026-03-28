@@ -127,23 +127,22 @@ jobs:
         run: |
           set -e
           cd padavan-ng-hadzhioglu/trunk/user
-
-          echo "=== Patching user/Makefile to add nfqws2 ==="
           mf="Makefile"
 
+          echo "=== Patching user/Makefile to add nfqws2 ==="
           echo "=== Before patch (nfqws lines) ==="
           grep 'nfqws' "$mf" || echo "no nfqws lines before patch"
 
           if ! grep -q 'CONFIG_FIRMWARE_INCLUDE_NFQWS2' "$mf"; then
-            sed -i 's/^dir_$(CONFIG_FIRMWARE_INCLUDE_NFQWS)\s\+\+= nfqws/&\
-            dir_$(CONFIG_FIRMWARE_INCLUDE_NFQWS2)\t\t+= nfqws2/' "$mf"
+            sed -i 's/^dir_$(CONFIG_FIRMWARE_INCLUDE_NFQWS)+= nfqws/&\
+            dir_$(CONFIG_FIRMWARE_INCLUDE_NFQWS2)+= nfqws2/' "$mf"
           fi
 
           echo "=== After patch (nfqws lines) ==="
           grep 'nfqws' "$mf" || echo "no nfqws lines after patch"
 
-          echo "=== Fragment around nfqws in Makefile ==="
-          nl -ba "$mf" | sed -n '1,120p' | grep -n 'nfqws' -n || true
+          echo "=== Full user/Makefile ==="
+          cat "$mf"
           
 #============================================================================
 
@@ -199,19 +198,6 @@ jobs:
           echo "=== Check nfqws2 in romfs ==="
           find padavan-ng-hadzhioglu/trunk/romfs -maxdepth 4 -type f -iname 'nfqws2*' -o -iname 'zapret2*' || true
 
-      - name: Check nfqws2 in romfs
-        run: |
-          cd padavan-ng-hadzhioglu/trunk
-          echo "=== search nfqws2 in romfs ==="
-          find romfs -maxdepth 8 -type f -iname 'nfqws2*' -o -iname 'zapret2*' -print || echo "nfqws2 files not found in romfs"
-          
-      - name: Check nfqws2 in romfs
-        run: |
-          cd padavan-ng-hadzhioglu/trunk
-          echo "=== search nfqws2 in romfs ==="
-          find romfs -maxdepth 6 -type f \
-            \( -iname 'nfqws2*' -o -iname 'zapret2*' \) -print || echo "nfqws2 files not found in romfs"
-          
       - name: Run custom post-build script
         run: '[[ -f post-build.sh ]] && . post-build.sh || :'
 
