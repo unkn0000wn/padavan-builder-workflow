@@ -1,4 +1,4 @@
-name: Nilabsent Zapret firmware MI-3G TEST
+name: Nilabsent Zapret firmware MI-3G TEST!
 
 on:
   workflow_dispatch:
