@@ -132,13 +132,13 @@ jobs:
 
           echo "=== Patching user/Makefile to add nfqws2 ==="
           echo "=== Before patch (nfqws* lines) ==="
-          grep 'nfqws' "$mf" || echo "no nfqws lines before patch"
+          grep 'NFQWS' "$mf" || echo "no NFQWS lines before patch"
 
-          # просто дописываем строку сразу после строки nfqws
-          sed -i '/^dir_$(CONFIG_FIRMWARE_INCLUDE_NFQWS) += nfqws$/a dir_$(CONFIG_FIRMWARE_INCLUDE_NFQWS2) += nfqws2' "$mf"
+          # в Makefile сейчас: dir_$(CONFIG_FIRMWARE_INCLUDE_NFQWS)+= nfqws
+          sed -i '/^dir_$(CONFIG_FIRMWARE_INCLUDE_NFQWS)[[:space:]]*+=/[[:space:]]*nfqws$/a dir_$(CONFIG_FIRMWARE_INCLUDE_NFQWS2)+= nfqws2' "$mf"
 
           echo "=== After patch (nfqws* lines) ==="
-          grep 'nfqws' "$mf" || echo "no nfqws lines after patch"
+          grep 'NFQWS' "$mf" || echo "no NFQWS lines after patch"
 
           echo "=== Full user/Makefile after patch ==="
           cat "$mf"
