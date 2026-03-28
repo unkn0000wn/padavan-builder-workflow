@@ -1,4 +1,4 @@
-name: Test Preplexity firmware MI-3 Pro
+name: Nilabsent Zapret firmware MI-3 Pro
 
 on:
   workflow_dispatch:
