@@ -131,7 +131,7 @@ jobs:
             *.tzst|*.tar.zst) ARCH="--zstd" ;;
             *.txz|*.tar.xz)   ARCH="--xz"   ;;
           esac
-          wget -qO- "$PADAVAN_TOOLCHAIN_URL" | tar -C padavan-ng $ARCH -xf - || :
+          wget -qO- "$PADAVAN_TOOLCHAIN_URL" | tar -C padavan-ng-hadzhioglu $ARCH -xf - || :
 
       - name: Build toolchain if missing
         if: ${{ hashFiles('padavan-ng/toolchain/out/mipsel-linux-uclibc/sysroot/lib/libuClibc-*.so') == '' }}
