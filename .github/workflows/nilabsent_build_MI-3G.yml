@@ -28,11 +28,115 @@ jobs:
             echo "$v=${!v}" >> "$GITHUB_ENV"
           done
 
-      - name: Download sources
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt remove '~i (~nclang-tidy|~nswig)' -y
+          sudo apt install --no-install-recommends -y \
+                   autoconf \
+                   autoconf-archive \
+                   automake \
+                   autopoint \
+                   bison \
+                   build-essential \
+                   ca-certificates \
+                   cmake \
+                   cpio \
+                   curl \
+                   doxygen \
+                   fakeroot \
+                   flex \
+                   gawk \
+                   gettext \
+                   git \
+                   gperf \
+                   help2man \
+                   kmod \
+                   libblkid-dev \
+                   libc-ares-dev \
+                   libcurl4-openssl-dev \
+                   libdevmapper-dev \
+                   libev-dev \
+                   libevent-dev \
+                   libexif-dev \
+                   libflac-dev \
+                   libgmp3-dev \
+                   libid3tag0-dev \
+                   libidn2-dev \
+                   libjpeg-dev \
+                   libkeyutils-dev \
+                   libltdl-dev \
+                   libmpc-dev \
+                   libmpfr-dev \
+                   libncurses5-dev \
+                   libogg-dev \
+                   libsqlite3-dev \
+                   libssl-dev \
+                   libtool \
+                   libtool-bin \
+                   libudev-dev \
+                   libunbound-dev \
+                   libvorbis-dev \
+                   libxml2-dev \
+                   locales \
+                   pkg-config \
+                   ppp-dev \
+                   python3 \
+                   python3-docutils \
+                   texinfo \
+                   unzip \
+                   uuid \
+                   uuid-dev \
+                   vim \
+                   wget \
+                   xxd \
+                   zlib1g-dev \
+                   zstd
+      - name: Update locales
+        run: |
+          sudo locale-gen --no-purge en_US.UTF-8 ru_RU.UTF-8
+          echo "LANG=en_US.UTF-8" >> $GITHUB_ENV
+          echo "LC_ALL=en_US.UTF-8" >> $GITHUB_ENV
+      - name: Download sources and toolchain
+        run: |
+          git clone -b "$PADAVAN_BRANCH" "$PADAVAN_REPO"
+          git checkout "$PADAVAN_COMMIT"
+          wget -qO- "$PADAVAN_TOOLCHAIN_URL" | tar -C padavan-ng --zstd -xf -
+      - name: Install themes
+        run: |
+          if [[ -n $PADAVAN_THEMES ]]; then
+            git clone --depth 1 -b "$PADAVAN_THEMES_BRANCH" "$PADAVAN_THEMES_REPO" themes
+            cp -r themes/common-theme themes/jquery.js padavan-ng/trunk/user/www/n56u_ribbon_fixed
+            for theme in $PADAVAN_THEMES; do
+              echo "Installing $theme theme"
+              cp -r "themes/$theme-theme" padavan-ng/trunk/user/www/n56u_ribbon_fixed
+            done
+          fi
+      - name: Run custom pre-build script
+        run: '[[ -f pre-build.sh ]] && . pre-build.sh || :'
+        
+
+      - name: Download sources and toolchain
         run: |
           git config --global --add safe.directory '*'
           git clone -b "$PADAVAN_BRANCH" "$PADAVAN_REPO"
           git -C padavan-ng checkout "$PADAVAN_COMMIT"
+
+          ARCH=""
+          case "$PADAVAN_TOOLCHAIN_URL" in
+            *.tzst|*.tar.zst) ARCH="--zstd" ;;
+            *.txz|*.tar.xz)   ARCH="--xz"   ;;
+          esac
+          wget -qO- "$PADAVAN_TOOLCHAIN_URL" | tar -C padavan-ng $ARCH -xf - || :
+
+      - name: Build toolchain if missing
+        if: ${{ hashFiles('padavan-ng/toolchain/out/mipsel-linux-uclibc/sysroot/lib/libuClibc-*.so') == '' }}
+        run: |
+          cd padavan-ng/toolchain
+          ./clean_sources.sh
+          ./build_toolchain.sh
+
+
 
       - name: Replace nfqws from nilabsent/padavan-ng
         run: |
