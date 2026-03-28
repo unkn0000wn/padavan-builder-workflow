@@ -1,4 +1,4 @@
-name: Nilabsent_Zapret firmware MI-3G
+name: Nilabsent Zapret firmware MI-3G
 
 on:
   workflow_dispatch:
