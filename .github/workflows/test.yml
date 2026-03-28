@@ -74,6 +74,7 @@ jobs:
           fi
 
       - name: Replace nfqws from nilabsent/padavan-ng
+        if: false
         if: env.ZAPRET_REPLACE_NFQWS == '1'
         run: |
           set -e
@@ -136,6 +137,7 @@ jobs:
           [[ -f zapret-72.12.tar.gz ]] || { echo "zapret-72.12.tar.gz missing in nfqws"; exit 1; }
 
       - name: Replace nfqws2 from nilabsent/padavan-ng
+        if: false
         if: env.ZAPRET_REPLACE_NFQWS2 == '1'
         run: |
           set -e
@@ -189,6 +191,59 @@ jobs:
           [[ -f Makefile ]] || { echo "Makefile missing in nfqws2"; exit 1; }
           [[ -f config/exclude.list ]] || { echo "exclude.list missing in nfqws2"; exit 1; }
           [[ -f zapret2-0.9.4.5.tar.gz ]] || { echo "zapret2-0.9.4.5.tar.gz missing in nfqws2"; exit 1; }
+
+#==================================================================
+      - name: Replace nfqws from nilabsent/padavan-ng
+        if: env.ZAPRET_REPLACE_NFQWS == '1'
+        run: |
+          set -e
+          cd padavan-ng-hadzhioglu/trunk/user
+
+          echo "=== Replacing nfqws directory from nilabsent/padavan-ng ==="
+          rm -rf nfqws
+          mkdir -p nfqws
+
+          # Скачиваем архив только каталога nfqws и распаковываем
+          curl -fsSL "https://github.com/nilabsent/padavan-ng/archive/refs/heads/master.tar.gz" -o /tmp/padavan-ng-nilabsent.tar.gz
+
+          tar -xzf /tmp/padavan-ng-nilabsent.tar.gz -C /tmp
+
+          # Копируем весь каталог trunk/user/nfqws как есть
+          cp -a /tmp/padavan-ng-master/trunk/user/nfqws/. nfqws/
+
+          echo "=== nfqws structure check ==="
+          [[ -f nfqws/Makefile ]] || { echo "Makefile missing in nfqws"; exit 1; }
+          [[ -f nfqws/config/exclude.list ]] || { echo "exclude.list missing in nfqws"; exit 1; }
+          [[ -f nfqws/zapret-72.12.tar.gz ]] || { echo "zapret-72.12.tar.gz missing in nfqws"; exit 1; }
+
+          ls -R nfqws
+
+      - name: Replace nfqws2 from nilabsent/padavan-ng
+        if: env.ZAPRET_REPLACE_NFQWS2 == '1'
+        run: |
+          set -e
+          cd padavan-ng-hadzhioglu/trunk/user
+
+          echo "=== Replacing nfqws2 directory from nilabsent/padavan-ng ==="
+          rm -rf nfqws2
+          mkdir -p nfqws2
+
+          # Используем тот же архив (если хочется, можно вынести скачивание в отдельный шаг)
+          curl -fsSL "https://github.com/nilabsent/padavan-ng/archive/refs/heads/master.tar.gz" -o /tmp/padavan-ng-nilabsent.tar.gz
+
+          tar -xzf /tmp/padavan-ng-nilabsent.tar.gz -C /tmp
+
+          cp -a /tmp/padavan-ng-master/trunk/user/nfqws2/. nfqws2/
+
+          echo "=== nfqws2 structure check ==="
+          [[ -f nfqws2/Makefile ]] || { echo "Makefile missing in nfqws2"; exit 1; }
+          [[ -f nfqws2/config/exclude.list ]] || { echo "exclude.list missing in nfqws2"; exit 1; }
+          [[ -f nfqws2/zapret2-0.9.4.5.tar.gz ]] || { echo "zapret2-0.9.4.5.tar.gz missing in nfqws2"; exit 1; }
+
+          ls -R nfqws2
+
+#============================================================================
+
 
       - name: Install themes
         run: |
