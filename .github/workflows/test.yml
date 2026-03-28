@@ -1,0 +1,305 @@
+name: Nilabsent Zapret firmware MI-3G
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      LANG: en_US.UTF-8
+      LC_ALL: en_US.UTF-8
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    container: registry.gitlab.com/hadzhioglu/padavan-ng
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Get variables
+        run: |
+          sed -i 's|\\r$||g' variables build_nilabsent_MI-3G.config
+          . <(cat variables build_nilabsent_MI-3G.config)
+          PADAVAN_THEMES="${PADAVAN_THEMES[*]}"
+          for v in "${!PADAVAN_@}" "${!CONFIG_@}" "${!ZAPRET_@}"; do
+            echo "$v=${!v}" >> "$GITHUB_ENV"
+          done
+
+      - name: Install dependencies
+        run: |
+          apt update
+          apt remove '~i (~nclang-tidy|~nswig)' -y
+          apt install --no-install-recommends -y \
+                   autoconf \
+                   autoconf-archive \
+                   automake \
+                   autopoint \
+                   bison \
+                   build-essential \
+                   ca-certificates \
+                   cmake \
+                   cpio \
+                   curl \
+                   doxygen \
+                   fakeroot \
+                   flex \
+                   gawk \
+                   gettext \
+                   git \
+                   gperf \
+                   help2man \
+                   kmod \
+                   libblkid-dev \
+                   libc-ares-dev \
+                   libcurl4-openssl-dev \
+                   libdevmapper-dev \
+                   libev-dev \
+                   libevent-dev \
+                   libexif-dev \
+                   libflac-dev \
+                   libgmp3-dev \
+                   libid3tag0-dev \
+                   libidn2-dev \
+                   libjpeg-dev \
+                   libkeyutils-dev \
+                   libltdl-dev \
+                   libmpc-dev \
+                   libmpfr-dev \
+                   libncurses5-dev \
+                   libogg-dev \
+                   libsqlite3-dev \
+                   libssl-dev \
+                   libtool \
+                   libtool-bin \
+                   libudev-dev \
+                   libunbound-dev \
+                   libvorbis-dev \
+                   libxml2-dev \
+                   locales \
+                   pkg-config \
+                   ppp-dev \
+                   python3 \
+                   python3-docutils \
+                   texinfo \
+                   unzip \
+                   uuid \
+                   uuid-dev \
+                   vim \
+                   wget \
+                   xxd \
+                   zlib1g-dev \
+                   zstd
+
+      - name: Update locales
+        run: |
+          locale-gen --no-purge en_US.UTF-8 ru_RU.UTF-8
+
+      - name: Download sources and toolchain
+        run: |
+          git config --global --add safe.directory '*'
+          git clone -b "$PADAVAN_BRANCH" "$PADAVAN_REPO" padavan-ng-hadzhioglu
+          git -C padavan-ng-hadzhioglu checkout "$PADAVAN_COMMIT"
+
+          ARCH=""
+          case "$PADAVAN_TOOLCHAIN_URL" in
+            *.tzst|*.tar.zst) ARCH="--zstd" ;;
+            *.txz|*.tar.xz)   ARCH="--xz"   ;;
+          esac
+          wget -qO- "$PADAVAN_TOOLCHAIN_URL" | tar -C padavan-ng-hadzhioglu $ARCH -xf - || :
+
+      - name: Build toolchain if missing
+        run: |
+          if [[ ! -f padavan-ng-hadzhioglu/toolchain/out/mipsel-linux-uclibc/sysroot/lib/libuClibc-*.so ]]; then
+            cd padavan-ng-hadzhioglu/toolchain
+            ./clean_sources.sh
+            ./build_toolchain.sh
+          else
+            echo "Toolchain already present, skip build_toolchain.sh"
+          fi
+
+      - name: Replace nfqws from nilabsent/padavan-ng
+        run: |
+          set -e
+          cd padavan-ng-hadzhioglu/trunk/user
+
+          echo "=== Replacing nfqws directory ==="
+          rm -rf nfqws
+          mkdir -p nfqws
+          cd nfqws
+
+          BASE_URL="https://github.com/nilabsent/padavan-ng/raw/refs/heads/master/trunk/user/nfqws"
+
+          echo "=== Downloading top-level nfqws files ==="
+          curl -fsSL "$BASE_URL/Makefile"  -o Makefile
+          curl -fsSL "$BASE_URL/zapret.sh" -o zapret.sh
+          chmod +x zapret.sh
+
+          echo "=== Downloading nfqws zapret tarball ==="
+          curl -fsSL "$BASE_URL/zapret-72.12.tar.gz" -o zapret-72.12.tar.gz
+
+          echo "=== Downloading nfqws patches/ ==="
+          mkdir -p patches
+          curl -fsSL "$BASE_URL/patches/firmware-specific.patch" -o patches/firmware-specific.patch
+          curl -fsSL "$BASE_URL/patches/nfqws-ipv6-support.patch" -o patches/nfqws-ipv6-support.patch
+
+          echo "=== Downloading nfqws config/ ==="
+          mkdir -p config
+          mkdir -p config/fake
+
+          curl -fsSL "$BASE_URL/config/exclude.list"   -o config/exclude.list
+          curl -fsSL "$BASE_URL/config/post_script.sh" -o config/post_script.sh
+          curl -fsSL "$BASE_URL/config/strategy"       -o config/strategy
+          curl -fsSL "$BASE_URL/config/strategy0"      -o config/strategy0
+          curl -fsSL "$BASE_URL/config/strategy1"      -o config/strategy1
+          curl -fsSL "$BASE_URL/config/strategy2"      -o config/strategy2
+          curl -fsSL "$BASE_URL/config/strategy3"      -o config/strategy3
+          curl -fsSL "$BASE_URL/config/strategy4"      -o config/strategy4
+          curl -fsSL "$BASE_URL/config/strategy5"      -o config/strategy5
+          curl -fsSL "$BASE_URL/config/strategy6"      -o config/strategy6
+          curl -fsSL "$BASE_URL/config/strategy7"      -o config/strategy7
+          curl -fsSL "$BASE_URL/config/strategy8"      -o config/strategy8
+          curl -fsSL "$BASE_URL/config/strategy9"      -o config/strategy9
+          curl -fsSL "$BASE_URL/config/user.list"      -o config/user.list
+
+          echo "=== Downloading nfqws config/fake/*.bin ==="
+          curl -fsSL "$BASE_URL/config/fake/dht_find_node.bin"                -o config/fake/dht_find_node.bin
+          curl -fsSL "$BASE_URL/config/fake/dht_get_peers.bin"                -o config/fake/dht_get_peers.bin
+          curl -fsSL "$BASE_URL/config/fake/quic_initial_vk_com.bin"          -o config/fake/quic_initial_vk_com.bin
+          curl -fsSL "$BASE_URL/config/fake/quic_initial_www_google_com.bin"  -o config/fake/quic_initial_www_google_com.bin
+          curl -fsSL "$BASE_URL/config/fake/stun.bin"                         -o config/fake/stun.bin
+          curl -fsSL "$BASE_URL/config/fake/tls_clienthello_gosuslugi_ru.bin" -o config/fake/tls_clienthello_gosuslugi_ru.bin
+          curl -fsSL "$BASE_URL/config/fake/tls_clienthello_max_ru.bin"       -o config/fake/tls_clienthello_max_ru.bin
+          curl -fsSL "$BASE_URL/config/fake/tls_clienthello_sberbank_ru.bin"  -o config/fake/tls_clienthello_sberbank_ru.bin
+          curl -fsSL "$BASE_URL/config/fake/tls_clienthello_vk_com.bin"       -o config/fake/tls_clienthello_vk_com.bin
+          curl -fsSL "$BASE_URL/config/fake/tls_clienthello_www_google_com.bin" -o config/fake/tls_clienthello_www_google_com.bin
+
+          echo "=== nfqws structure check ==="
+          [[ -f Makefile ]] || { echo "Makefile missing in nfqws"; exit 1; }
+          [[ -f config/exclude.list ]] || { echo "exclude.list missing in nfqws"; exit 1; }
+          [[ -f zapret-72.12.tar.gz ]] || { echo "zapret-72.12.tar.gz missing in nfqws"; exit 1; }
+
+      - name: Replace nfqws2 from nilabsent/padavan-ng
+        run: |
+          set -e
+          cd padavan-ng-hadzhioglu/trunk/user
+
+          echo "=== Replacing nfqws2 directory ==="
+          rm -rf nfqws2
+          mkdir -p nfqws2
+          cd nfqws2
+
+          BASE2_URL="https://github.com/nilabsent/padavan-ng/raw/refs/heads/master/trunk/user/nfqws2"
+
+          echo "=== Downloading top-level nfqws2 files ==="
+          curl -fsSL "$BASE2_URL/Makefile"  -o Makefile
+          curl -fsSL "$BASE2_URL/zapret.sh" -o zapret.sh
+          chmod +x zapret.sh
+
+          echo "=== Downloading nfqws2 zapret2 tarball ==="
+          curl -fsSL "$BASE2_URL/zapret2-0.9.4.5.tar.gz" -o zapret2-0.9.4.5.tar.gz
+
+          echo "=== Downloading nfqws2 patches/ ==="
+          mkdir -p patches
+          curl -fsSL "$BASE2_URL/patches/firmware-specific.patch" -o patches/firmware-specific.patch
+
+          echo "=== Downloading nfqws2 config/ ==="
+          mkdir -p config
+          mkdir -p config/fake
+
+          curl -fsSL "$BASE2_URL/config/exclude.list"   -o config/exclude.list
+          curl -fsSL "$BASE2_URL/config/post_script.sh" -o config/post_script.sh
+          curl -fsSL "$BASE2_URL/config/strategy5"      -o config/strategy5
+          curl -fsSL "$BASE2_URL/config/strategy6"      -o config/strategy6
+          curl -fsSL "$BASE2_URL/config/strategy7"      -o config/strategy7
+          curl -fsSL "$BASE2_URL/config/strategy8"      -o config/strategy8
+          curl -fsSL "$BASE2_URL/config/strategy9"      -o config/strategy9
+          curl -fsSL "$BASE2_URL/config/user.list"      -o config/user.list
+
+          echo "=== Downloading nfqws2 config/fake/*.bin ==="
+          curl -fsSL "$BASE2_URL/config/fake/dht_find_node.bin"                -o config/fake/dht_find_node.bin
+          curl -fsSL "$BASE2_URL/config/fake/dht_get_peers.bin"                -o config/fake/dht_get_peers.bin
+          curl -fsSL "$BASE2_URL/config/fake/quic_initial_vk_com.bin"          -o config/fake/quic_initial_vk_com.bin
+          curl -fsSL "$BASE2_URL/config/fake/quic_initial_www_google_com.bin"  -o config/fake/quic_initial_www_google_com.bin
+          curl -fsSL "$BASE2_URL/config/fake/stun.bin"                         -o config/fake/stun.bin
+          curl -fsSL "$BASE2_URL/config/fake/tls_clienthello_gosuslugi_ru.bin" -o config/fake/tls_clienthello_gosuslugi_ru.bin
+          curl -fsSL "$BASE2_URL/config/fake/tls_clienthello_max_ru.bin"       -o config/fake/tls_clienthello_max_ru.bin
+          curl -fsSL "$BASE2_URL/config/fake/tls_clienthello_sberbank_ru.bin"  -o config/fake/tls_clienthello_sberbank_ru.bin
+          curl -fsSL "$BASE2_URL/config/fake/tls_clienthello_vk_com.bin"       -o config/fake/tls_clienthello_vk_com.bin
+          curl -fsSL "$BASE2_URL/config/fake/tls_clienthello_www_google_com.bin" -o config/fake/tls_clienthello_www_google_com.bin
+
+          echo "=== nfqws2 structure check ==="
+          [[ -f Makefile ]] || { echo "Makefile missing in nfqws2"; exit 1; }
+          [[ -f config/exclude.list ]] || { echo "exclude.list missing in nfqws2"; exit 1; }
+          [[ -f zapret2-0.9.4.5.tar.gz ]] || { echo "zapret2-0.9.4.5.tar.gz missing in nfqws2"; exit 1; }
+
+      - name: Install themes
+        run: |
+          if [[ -n "$PADAVAN_THEMES" ]]; then
+            git clone --depth 1 -b "$PADAVAN_THEMES_BRANCH" "$PADAVAN_THEMES_REPO" themes
+            cp -r themes/common-theme themes/jquery.js padavan-ng-hadzhioglu/trunk/user/www/n56u_ribbon_fixed
+            for theme in $PADAVAN_THEMES; do
+              echo "Installing $theme theme"
+              cp -r "themes/$theme-theme" padavan-ng-hadzhioglu/trunk/user/www/n56u_ribbon_fixed
+            done
+          fi
+
+      - name: Run custom pre-build script
+        run: '[[ -f pre-build.sh ]] && . pre-build.sh || :'
+
+      - name: Build firmware
+        run: |
+          cp build_nilabsent_MI-3G.config padavan-ng-hadzhioglu/trunk/.config
+          cd padavan-ng-hadzhioglu/trunk
+          ./clear_tree.sh
+          ./build_firmware.sh
+
+          FW_FILE_NAME="$(find images -type f -regextype posix-extended -iregex '.*\\.\\(trx\\|bin\\)$' -printf '%T@\\t%f\\n' | sort -V | tail -1 | cut -f2)"
+          if [[ -z "$FW_FILE_NAME" ]]; then
+            echo "Firmware image not found in images/"
+            exit 1
+          fi
+          echo "FW_FILE_NAME=$FW_FILE_NAME" >> "$GITHUB_ENV"
+
+      - name: Run custom post-build script
+        run: '[[ -f post-build.sh ]] && . post-build.sh || :'
+
+      - name: Prepare artifacts
+        run: |
+          cp "padavan-ng-hadzhioglu/trunk/images/$FW_FILE_NAME" .
+          echo "BUILD_TIMESTAMP=$(date '+%Y.%m.%d_%H.%M.%S')" >> "$GITHUB_ENV"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v5
+        with:
+          name: padavan-ng-hadzhioglu_${{ env.CONFIG_VENDOR }}_${{ env.CONFIG_FIRMWARE_PRODUCT_ID }}_${{ env.BUILD_TIMESTAMP }}
+          retention-days: 7
+          path: |
+            ${{ env.FW_FILE_NAME }}
+            build_nilabsent_MI-3G.config
+
+      - name: Check firmware size
+        run: |
+          partitions="padavan-ng-hadzhioglu/trunk/configs/boards/$CONFIG_VENDOR/$CONFIG_FIRMWARE_PRODUCT_ID/partitions.config"
+          if [[ ! -f "$partitions" ]]; then
+            echo "Partitions config not found: $partitions"
+            exit 1
+          fi
+
+          max_fw_size="$(awk '/Firmware/ { getline; getline; sub(",", ""); num=strtonum($2); if (num>0) print num; }' "$partitions")"
+          if [[ -z "$max_fw_size" ]]; then
+            echo "Cannot extract max firmware size from $partitions"
+            exit 1
+          fi
+
+          fw_size="$(stat -c %s "$FW_FILE_NAME")"
+          if (( fw_size > max_fw_size )); then
+            fw_size_fmtd="$(numfmt --grouping "$fw_size") bytes"
+            max_fw_size_fmtd="$(numfmt --grouping "$max_fw_size") bytes"
+            echo "Firmware size ($fw_size_fmtd) exceeds max size ($max_fw_size_fmtd) for your target device"
+            exit 1
+          fi
