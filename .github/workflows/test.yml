@@ -249,6 +249,14 @@ jobs:
           # если есть общий лог
           grep -i "nfqws2" -R . || echo "no explicit nfqws2 mentions in logs"
 
+          echo "=== Patching user/Makefile to add nfqws2 ==="
+          mf="Makefile"
+          if ! grep -q 'CONFIG_FIRMWARE_INCLUDE_NFQWS2' "$mf"; then
+            sed -i 's/^dir_$(CONFIG_FIRMWARE_INCLUDE_NFQWS)\s\+\+= nfqws/&\
+          dir_$(CONFIG_FIRMWARE_INCLUDE_NFQWS2)\t\t+= nfqws2/' "$mf"
+          fi
+          grep 'nfqws' "$mf" || true
+
 #============================================================================
 
 
