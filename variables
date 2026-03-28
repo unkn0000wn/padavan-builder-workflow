@@ -15,6 +15,9 @@ PADAVAN_THEMES_REPO="https://gitlab.com/hadzhioglu/padavan-themes.git"
 #PADAVAN_THEMES_REPO="https://gitlab.com/hadzhioglu/padavan-themes-lite.git"
 PADAVAN_THEMES_BRANCH="main"
 
+ZAPRET_REPLACE_NFQWS=1
+ZAPRET_REPLACE_NFQWS2=1
+
 PADAVAN_THEMES=(
 #  blue
 #  blue2
