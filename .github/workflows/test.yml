@@ -75,7 +75,7 @@ jobs:
 
       - name: Replace nfqws from nilabsent/padavan-ng
         if: false
-        if: env.ZAPRET_REPLACE_NFQWS == '1'
+#        if: env.ZAPRET_REPLACE_NFQWS == '1'
         run: |
           set -e
           cd padavan-ng-hadzhioglu/trunk/user
@@ -138,7 +138,7 @@ jobs:
 
       - name: Replace nfqws2 from nilabsent/padavan-ng
         if: false
-        if: env.ZAPRET_REPLACE_NFQWS2 == '1'
+#        if: env.ZAPRET_REPLACE_NFQWS2 == '1'
         run: |
           set -e
           cd padavan-ng-hadzhioglu/trunk/user
