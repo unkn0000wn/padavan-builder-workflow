@@ -73,125 +73,6 @@ jobs:
             echo "Toolchain already present, skip build_toolchain.sh"
           fi
 
-      - name: Replace nfqws from nilabsent/padavan-ng
-        if: false
-#        if: env.ZAPRET_REPLACE_NFQWS == '1'
-        run: |
-          set -e
-          cd padavan-ng-hadzhioglu/trunk/user
-
-          echo "=== Replacing nfqws directory ==="
-          rm -rf nfqws
-          mkdir -p nfqws
-          cd nfqws
-
-          BASE_URL="https://github.com/nilabsent/padavan-ng/raw/refs/heads/master/trunk/user/nfqws"
-
-          echo "=== Downloading top-level nfqws files ==="
-          curl -fsSL "$BASE_URL/Makefile"  -o Makefile
-          curl -fsSL "$BASE_URL/zapret.sh" -o zapret.sh
-          chmod +x zapret.sh
-
-          echo "=== Downloading nfqws zapret tarball ==="
-          curl -fsSL "$BASE_URL/zapret-72.12.tar.gz" -o zapret-72.12.tar.gz
-
-          echo "=== Downloading nfqws patches/ ==="
-          mkdir -p patches
-          curl -fsSL "$BASE_URL/patches/firmware-specific.patch" -o patches/firmware-specific.patch
-          curl -fsSL "$BASE_URL/patches/nfqws-ipv6-support.patch" -o patches/nfqws-ipv6-support.patch
-
-          echo "=== Downloading nfqws config/ ==="
-          mkdir -p config
-          mkdir -p config/fake
-
-          curl -fsSL "$BASE_URL/config/exclude.list"   -o config/exclude.list
-          curl -fsSL "$BASE_URL/config/post_script.sh" -o config/post_script.sh
-          curl -fsSL "$BASE_URL/config/strategy"       -o config/strategy
-          curl -fsSL "$BASE_URL/config/strategy0"      -o config/strategy0
-          curl -fsSL "$BASE_URL/config/strategy1"      -o config/strategy1
-          curl -fsSL "$BASE_URL/config/strategy2"      -o config/strategy2
-          curl -fsSL "$BASE_URL/config/strategy3"      -o config/strategy3
-          curl -fsSL "$BASE_URL/config/strategy4"      -o config/strategy4
-          curl -fsSL "$BASE_URL/config/strategy5"      -o config/strategy5
-          curl -fsSL "$BASE_URL/config/strategy6"      -o config/strategy6
-          curl -fsSL "$BASE_URL/config/strategy7"      -o config/strategy7
-          curl -fsSL "$BASE_URL/config/strategy8"      -o config/strategy8
-          curl -fsSL "$BASE_URL/config/strategy9"      -o config/strategy9
-          curl -fsSL "$BASE_URL/config/user.list"      -o config/user.list
-
-          echo "=== Downloading nfqws config/fake/*.bin ==="
-          curl -fsSL "$BASE_URL/config/fake/dht_find_node.bin"                -o config/fake/dht_find_node.bin
-          curl -fsSL "$BASE_URL/config/fake/dht_get_peers.bin"                -o config/fake/dht_get_peers.bin
-          curl -fsSL "$BASE_URL/config/fake/quic_initial_vk_com.bin"          -o config/fake/quic_initial_vk_com.bin
-          curl -fsSL "$BASE_URL/config/fake/quic_initial_www_google_com.bin"  -o config/fake/quic_initial_www_google_com.bin
-          curl -fsSL "$BASE_URL/config/fake/stun.bin"                         -o config/fake/stun.bin
-          curl -fsSL "$BASE_URL/config/fake/tls_clienthello_gosuslugi_ru.bin" -o config/fake/tls_clienthello_gosuslugi_ru.bin
-          curl -fsSL "$BASE_URL/config/fake/tls_clienthello_max_ru.bin"       -o config/fake/tls_clienthello_max_ru.bin
-          curl -fsSL "$BASE_URL/config/fake/tls_clienthello_sberbank_ru.bin"  -o config/fake/tls_clienthello_sberbank_ru.bin
-          curl -fsSL "$BASE_URL/config/fake/tls_clienthello_vk_com.bin"       -o config/fake/tls_clienthello_vk_com.bin
-          curl -fsSL "$BASE_URL/config/fake/tls_clienthello_www_google_com.bin" -o config/fake/tls_clienthello_www_google_com.bin
-
-          echo "=== nfqws structure check ==="
-          [[ -f Makefile ]] || { echo "Makefile missing in nfqws"; exit 1; }
-          [[ -f config/exclude.list ]] || { echo "exclude.list missing in nfqws"; exit 1; }
-          [[ -f zapret-72.12.tar.gz ]] || { echo "zapret-72.12.tar.gz missing in nfqws"; exit 1; }
-
-      - name: Replace nfqws2 from nilabsent/padavan-ng
-        if: false
-#        if: env.ZAPRET_REPLACE_NFQWS2 == '1'
-        run: |
-          set -e
-          cd padavan-ng-hadzhioglu/trunk/user
-
-          echo "=== Replacing nfqws2 directory ==="
-          rm -rf nfqws2
-          mkdir -p nfqws2
-          cd nfqws2
-
-          BASE2_URL="https://github.com/nilabsent/padavan-ng/raw/refs/heads/master/trunk/user/nfqws2"
-
-          echo "=== Downloading top-level nfqws2 files ==="
-          curl -fsSL "$BASE2_URL/Makefile"  -o Makefile
-          curl -fsSL "$BASE2_URL/zapret.sh" -o zapret.sh
-          chmod +x zapret.sh
-
-          echo "=== Downloading nfqws2 zapret2 tarball ==="
-          curl -fsSL "$BASE2_URL/zapret2-0.9.4.5.tar.gz" -o zapret2-0.9.4.5.tar.gz
-
-          echo "=== Downloading nfqws2 patches/ ==="
-          mkdir -p patches
-          curl -fsSL "$BASE2_URL/patches/firmware-specific.patch" -o patches/firmware-specific.patch
-
-          echo "=== Downloading nfqws2 config/ ==="
-          mkdir -p config
-          mkdir -p config/fake
-
-          curl -fsSL "$BASE2_URL/config/exclude.list"   -o config/exclude.list
-          curl -fsSL "$BASE2_URL/config/post_script.sh" -o config/post_script.sh
-          curl -fsSL "$BASE2_URL/config/strategy5"      -o config/strategy5
-          curl -fsSL "$BASE2_URL/config/strategy6"      -o config/strategy6
-          curl -fsSL "$BASE2_URL/config/strategy7"      -o config/strategy7
-          curl -fsSL "$BASE2_URL/config/strategy8"      -o config/strategy8
-          curl -fsSL "$BASE2_URL/config/strategy9"      -o config/strategy9
-          curl -fsSL "$BASE2_URL/config/user.list"      -o config/user.list
-
-          echo "=== Downloading nfqws2 config/fake/*.bin ==="
-          curl -fsSL "$BASE2_URL/config/fake/dht_find_node.bin"                -o config/fake/dht_find_node.bin
-          curl -fsSL "$BASE2_URL/config/fake/dht_get_peers.bin"                -o config/fake/dht_get_peers.bin
-          curl -fsSL "$BASE2_URL/config/fake/quic_initial_vk_com.bin"          -o config/fake/quic_initial_vk_com.bin
-          curl -fsSL "$BASE2_URL/config/fake/quic_initial_www_google_com.bin"  -o config/fake/quic_initial_www_google_com.bin
-          curl -fsSL "$BASE2_URL/config/fake/stun.bin"                         -o config/fake/stun.bin
-          curl -fsSL "$BASE2_URL/config/fake/tls_clienthello_gosuslugi_ru.bin" -o config/fake/tls_clienthello_gosuslugi_ru.bin
-          curl -fsSL "$BASE2_URL/config/fake/tls_clienthello_max_ru.bin"       -o config/fake/tls_clienthello_max_ru.bin
-          curl -fsSL "$BASE2_URL/config/fake/tls_clienthello_sberbank_ru.bin"  -o config/fake/tls_clienthello_sberbank_ru.bin
-          curl -fsSL "$BASE2_URL/config/fake/tls_clienthello_vk_com.bin"       -o config/fake/tls_clienthello_vk_com.bin
-          curl -fsSL "$BASE2_URL/config/fake/tls_clienthello_www_google_com.bin" -o config/fake/tls_clienthello_www_google_com.bin
-
-          echo "=== nfqws2 structure check ==="
-          [[ -f Makefile ]] || { echo "Makefile missing in nfqws2"; exit 1; }
-          [[ -f config/exclude.list ]] || { echo "exclude.list missing in nfqws2"; exit 1; }
-          [[ -f zapret2-0.9.4.5.tar.gz ]] || { echo "zapret2-0.9.4.5.tar.gz missing in nfqws2"; exit 1; }
-
 #==================================================================
       - name: Replace nfqws from nilabsent/padavan-ng
         if: env.ZAPRET_REPLACE_NFQWS == '1'
@@ -242,27 +123,28 @@ jobs:
 
           ls -R nfqws2
 
-      - name: Debug nfqws2 build
+      - name: Patch user/Makefile to add nfqws2
         run: |
-          cd padavan-ng-hadzhioglu/trunk
-          echo "=== grep nfqws2 in build logs ==="
-          # если есть общий лог
-          grep -i "nfqws2" -R . || echo "no explicit nfqws2 mentions in logs"
+          set -e
+          cd padavan-ng-hadzhioglu/trunk/user
 
           echo "=== Patching user/Makefile to add nfqws2 ==="
           mf="Makefile"
+
+          echo "=== Before patch (nfqws lines) ==="
+          grep 'nfqws' "$mf" || echo "no nfqws lines before patch"
+
           if ! grep -q 'CONFIG_FIRMWARE_INCLUDE_NFQWS2' "$mf"; then
             sed -i 's/^dir_$(CONFIG_FIRMWARE_INCLUDE_NFQWS)\s\+\+= nfqws/&\
-          dir_$(CONFIG_FIRMWARE_INCLUDE_NFQWS2)\t\t+= nfqws2/' "$mf"
+            dir_$(CONFIG_FIRMWARE_INCLUDE_NFQWS2)\t\t+= nfqws2/' "$mf"
           fi
-          grep 'nfqws' "$mf" || true
-          
-      - name: Check nfqws2 in romfs
-        run: |
-          cd padavan-ng-hadzhioglu/trunk
-          echo "=== search nfqws2 in romfs ==="
-          find romfs -maxdepth 8 -type f -iname 'nfqws2*' -o -iname 'zapret2*' -print || echo "nfqws2 files not found in romfs"
 
+          echo "=== After patch (nfqws lines) ==="
+          grep 'nfqws' "$mf" || echo "no nfqws lines after patch"
+
+          echo "=== Fragment around nfqws in Makefile ==="
+          nl -ba "$mf" | sed -n '1,120p' | grep -n 'nfqws' -n || true
+          
 #============================================================================
 
 
@@ -317,6 +199,12 @@ jobs:
           echo "=== Check nfqws2 in romfs ==="
           find padavan-ng-hadzhioglu/trunk/romfs -maxdepth 4 -type f -iname 'nfqws2*' -o -iname 'zapret2*' || true
 
+      - name: Check nfqws2 in romfs
+        run: |
+          cd padavan-ng-hadzhioglu/trunk
+          echo "=== search nfqws2 in romfs ==="
+          find romfs -maxdepth 8 -type f -iname 'nfqws2*' -o -iname 'zapret2*' -print || echo "nfqws2 files not found in romfs"
+          
       - name: Check nfqws2 in romfs
         run: |
           cd padavan-ng-hadzhioglu/trunk
