@@ -123,8 +123,8 @@ jobs:
       - name: Download sources and toolchain
         run: |
           git config --global --add safe.directory '*'
-          git clone -b "$PADAVAN_BRANCH" "$PADAVAN_REPO"
-          git -C padavan-ng checkout "$PADAVAN_COMMIT"
+          git clone -b "$PADAVAN_BRANCH" "$PADAVAN_REPO" padavan-ng-hadzhioglu
+          git -C padavan-ng-hadzhioglu checkout "$PADAVAN_COMMIT"
 
           ARCH=""
           case "$PADAVAN_TOOLCHAIN_URL" in
@@ -134,9 +134,9 @@ jobs:
           wget -qO- "$PADAVAN_TOOLCHAIN_URL" | tar -C padavan-ng-hadzhioglu $ARCH -xf - || :
 
       - name: Build toolchain if missing
-        if: ${{ hashFiles('padavan-ng/toolchain/out/mipsel-linux-uclibc/sysroot/lib/libuClibc-*.so') == '' }}
+        if: ${{ hashFiles('padavan-ng-hadzhioglu/toolchain/out/mipsel-linux-uclibc/sysroot/lib/libuClibc-*.so') == '' }}
         run: |
-          cd padavan-ng/toolchain
+          cd padavan-ng-hadzhioglu/toolchain
           ./clean_sources.sh
           ./build_toolchain.sh
 
@@ -145,7 +145,7 @@ jobs:
       - name: Replace nfqws from nilabsent/padavan-ng
         run: |
           set -e
-          cd padavan-ng/trunk/user
+          cd padavan-ng-hadzhioglu/trunk/user
 
           echo "=== Replacing nfqws directory ==="
           rm -rf nfqws
@@ -204,7 +204,7 @@ jobs:
       - name: Replace nfqws2 from nilabsent/padavan-ng
         run: |
           set -e
-          cd padavan-ng/trunk/user
+          cd padavan-ng-hadzhioglu/trunk/user
 
           echo "=== Replacing nfqws2 directory ==="
           rm -rf nfqws2
@@ -257,11 +257,11 @@ jobs:
         run: |
           if [[ -n $PADAVAN_THEMES ]]; then
             git clone --depth 1 -b "$PADAVAN_THEMES_BRANCH" "$PADAVAN_THEMES_REPO" themes
-            cp -r themes/common-theme themes/jquery.js padavan-ng/trunk/user/www/n56u_ribbon_fixed
+            cp -r themes/common-theme themes/jquery.js padavan-ng-hadzhioglu/trunk/user/www/n56u_ribbon_fixed
 
             for theme in $PADAVAN_THEMES; do
               echo "Installing $theme theme"
-              cp -r "themes/$theme-theme" padavan-ng/trunk/user/www/n56u_ribbon_fixed
+              cp -r "themes/$theme-theme" padavan-ng-hadzhioglu/trunk/user/www/n56u_ribbon_fixed
             done
           fi
 
@@ -270,7 +270,7 @@ jobs:
 
       - name: nfqws / zapret presence check BEFORE build
         run: |
-          cd padavan-ng/trunk/user/nfqws
+          cd padavan-ng-hadzhioglu/trunk/user/nfqws
           echo "=== nfqws directory listing BEFORE build (top) ==="
           ls -al
           echo "=== nfqws/config BEFORE build ==="
@@ -284,7 +284,7 @@ jobs:
 
       - name: nfqws2 / zapret2 presence check BEFORE build
         run: |
-          cd padavan-ng/trunk/user/nfqws2
+          cd padavan-ng-hadzhioglu/trunk/user/nfqws2
           echo "=== nfqws2 directory listing BEFORE build (top) ==="
           ls -al
           echo "=== nfqws2/config BEFORE build ==="
@@ -298,8 +298,8 @@ jobs:
 
       - name: Build firmware
         run: |
-          cp build_nilabsent_MI-3G.config padavan-ng/trunk/.config
-          cd padavan-ng/trunk
+          cp build_nilabsent_MI-3G.config padavan-ng-hadzhioglu/trunk/.config
+          cd padavan-ng-hadzhioglu/trunk
           ./clear_tree.sh
           ./build_firmware.sh
 
@@ -312,13 +312,13 @@ jobs:
 
       - name: Prepare artifacts
         run: |
-          cp "padavan-ng/trunk/images/$FW_FILE_NAME" .
+          cp "padavan-ng-hadzhioglu/trunk/images/$FW_FILE_NAME" .
           echo "BUILD_TIMESTAMP=$(date '+%Y.%m.%d_%H.%M.%S')" >> "$GITHUB_ENV"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v5
         with:
-          name: padavan-ng_${{ env.CONFIG_VENDOR }}_${{ env.CONFIG_FIRMWARE_PRODUCT_ID }}_${{ env.BUILD_TIMESTAMP }}
+          name: padavan-ng-hadzhioglu_${{ env.CONFIG_VENDOR }}_${{ env.CONFIG_FIRMWARE_PRODUCT_ID }}_${{ env.BUILD_TIMESTAMP }}
           retention-days: 7
           path: |
             ${{ env.FW_FILE_NAME }}
@@ -326,7 +326,7 @@ jobs:
 
       - name: Check firmware size
         run: |
-          partitions="padavan-ng/trunk/configs/boards/$CONFIG_VENDOR/$CONFIG_FIRMWARE_PRODUCT_ID/partitions.config"
+          partitions="padavan-ng-hadzhioglu/trunk/configs/boards/$CONFIG_VENDOR/$CONFIG_FIRMWARE_PRODUCT_ID/partitions.config"
           max_fw_size="$(awk '/Firmware/ { getline; getline; sub(",", ""); print strtonum($2); }' "$partitions")"
           fw_size="$(stat -c %s "$FW_FILE_NAME")"
 
