@@ -260,6 +260,7 @@ jobs:
         run: '[[ -f pre-build.sh ]] && . pre-build.sh || :'
 
       - name: Build firmware
+        if: false
         run: |
           cp build_nilabsent_MI-3G.config padavan-ng-hadzhioglu/trunk/.config
           cd padavan-ng-hadzhioglu/trunk
@@ -272,6 +273,26 @@ jobs:
             exit 1
           fi
           echo "FW_FILE_NAME=$FW_FILE_NAME" >> "$GITHUB_ENV"
+
+        - name: Build firmware 
+        run: |
+          cp build_nilabsent_MI-3G.config padavan-ng-hadzhioglu/trunk/.config
+          cd padavan-ng-hadzhioglu/trunk
+          ./clear_tree.sh
+          ./build_firmware.sh
+
+          # Берём самый свежий .trx или .bin
+          FW_FILE_NAME="$(ls -1t images/*.trx images/*.bin 2>/dev/null | head -n1 | xargs -n1 basename || true)"
+
+          if [[ -z "$FW_FILE_NAME" ]]; then
+            echo "Firmware image not found in images/"
+            ls -al images || echo "images dir missing"
+            exit 1
+          fi
+
+          echo "Found firmware: $FW_FILE_NAME"
+          echo "FW_FILE_NAME=$FW_FILE_NAME" >> "$GITHUB_ENV"
+          
 
       - name: Run custom post-build script
         run: '[[ -f post-build.sh ]] && . post-build.sh || :'
