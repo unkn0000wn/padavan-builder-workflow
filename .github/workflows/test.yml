@@ -26,7 +26,7 @@ jobs:
           sed -i 's|\\r$||g' variables build_nilabsent_MI-3G.config
           . <(cat variables build_nilabsent_MI-3G.config)
           PADAVAN_THEMES="${PADAVAN_THEMES[*]}"
-          for v in "${!PADAVAN_@}" "${!CONFIG_@}" "${!ZAPRET_REPLACE_NFQWS_@}" "${!ZAPRET_REPLACE_NFQWS2_@}"; do
+          for v in "${!PADAVAN_@}" "${!CONFIG_@}" "${!ZAPRET_@}"; do
             echo "$v=${!v}" >> "$GITHUB_ENV"
           done
 
