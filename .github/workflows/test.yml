@@ -127,7 +127,7 @@ jobs:
       - name: Patch user/Makefile to add nfqws2
         run: |
           set -e
-          set -x    # включаем подробный трейc
+          set -x
           cd padavan-ng-hadzhioglu/trunk/user
           mf="Makefile"
 
@@ -135,15 +135,16 @@ jobs:
           echo "=== Before patch (NFQWS lines) ==="
           grep 'NFQWS' "$mf" || echo "no NFQWS lines before patch"
 
-          # версия без multi-line sed, просто вставка строки ПОСЛЕ найденной
-          line=$(grep -n 'dir_$(CONFIG_FIRMWARE_INCLUDE_NFQWS)+= nfqws' "$mf" | head -n1 | cut -d: -f1 || true)
-          echo "grep line='$line'"
-          if [ -n "$line" ]; then
-            echo "Found NFQWS at line $line, inserting nfqws2 after it"
-            sed -i "$((line+1))i dir_$(CONFIG_FIRMWARE_INCLUDE_NFQWS2)\t\t+= nfqws2" "$mf"
-          else
-            echo "NFQWS line not found, nothing patched"
-          fi
+          tmp="$(mktemp)"
+          while IFS= read -r line; do
+            if [ "$line" = 'dir_$(CONFIG_FIRMWARE_INCLUDE_NFQWS) += nfqws' ]; then
+              echo 'dir_$(CONFIG_FIRMWARE_INCLUDE_NFQWS) += nfqws' >> "$tmp"
+              echo 'dir_$(CONFIG_FIRMWARE_INCLUDE_NFQWS2) += nfqws2' >> "$tmp"
+            else
+              echo "$line" >> "$tmp"
+            fi
+          done < "$mf"
+          mv "$tmp" "$mf"
 
           echo "=== After patch (NFQWS lines) ==="
           grep 'NFQWS' "$mf" || echo "no NFQWS lines after patch"
