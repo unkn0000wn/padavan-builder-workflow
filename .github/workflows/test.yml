@@ -154,8 +154,8 @@ jobs:
           while IFS= read -r line; do
             case "$line" in
               *'CONFIG_FIRMWARE_INCLUDE_NFQWS'*)
-                echo 'dir_$(CONFIG_FIRMWARE_INCLUDE_NFQWS)+= nfqws' >> "$tmp"
-                echo 'dir_$(CONFIG_FIRMWARE_INCLUDE_NFQWS2)+= nfqws2' >> "$tmp"
+                echo 'dir_$(CONFIG_FIRMWARE_INCLUDE_NFQWS)    += nfqws' >> "$tmp"
+                echo 'dir_$(CONFIG_FIRMWARE_INCLUDE_NFQWS2)    += nfqws2' >> "$tmp"
                 matched=1
                 ;;
               *)
@@ -170,7 +170,7 @@ jobs:
             echo "ERROR: line with CONFIG_FIRMWARE_INCLUDE_NFQWS not found, aborting build"
             exit 1
           fi
-          if ! grep -q 'dir_$(CONFIG_FIRMWARE_INCLUDE_NFQWS2)+= nfqws2' "$mf"; then
+          if ! grep -q 'dir_$(CONFIG_FIRMWARE_INCLUDE_NFQWS2)    += nfqws2' "$mf"; then
             echo "ERROR: nfqws2 line not found in $mf, aborting build"
             exit 1
           fi
