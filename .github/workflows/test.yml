@@ -130,16 +130,11 @@ jobs:
           cd padavan-ng-hadzhioglu/trunk/user
           mf="Makefile"
 
-          echo "=== Patching user/Makefile to add nfqws2 ==="
-          echo "=== Before patch (NFQWS lines, with numbers) ==="
-          nl -ba "$mf" | grep 'CONFIG_FIRMWARE_INCLUDE_NFQWS' || echo "no NFQWS lines before patch"
-
           tmp="$(mktemp)"
           matched=0
           while IFS= read -r line; do
             case "$line" in
               *'CONFIG_FIRMWARE_INCLUDE_NFQWS'*)
-                echo "MATCHED LINE WITH CONFIG_FIRMWARE_INCLUDE_NFQWS, PATCHING" >&2
                 echo 'dir_$(CONFIG_FIRMWARE_INCLUDE_NFQWS)+= nfqws' >> "$tmp"
                 echo 'dir_$(CONFIG_FIRMWARE_INCLUDE_NFQWS2)+= nfqws2' >> "$tmp"
                 matched=1
@@ -151,13 +146,7 @@ jobs:
           done < "$mf"
           mv "$tmp" "$mf"
 
-          echo "=== After patch (NFQWS lines, with numbers) ==="
-          nl -ba "$mf" | grep 'CONFIG_FIRMWARE_INCLUDE_NFQWS' || echo "no NFQWS lines after patch"
-
-          echo "=== Full user/Makefile after patch ==="
-          cat "$mf"
-
-          echo "=== Verifying patch ==="
+          # проверка
           if [ "$matched" -ne 1 ]; then
             echo "ERROR: line with CONFIG_FIRMWARE_INCLUDE_NFQWS not found, aborting build"
             exit 1
@@ -166,6 +155,10 @@ jobs:
             echo "ERROR: nfqws2 line not found in $mf, aborting build"
             exit 1
           fi
+
+          echo "=== user/Makefile after nfqws2 patch ==="
+          cat "$mf"
+          
       - name: Debug NFQWS line formatting
         run: |
           set -e
