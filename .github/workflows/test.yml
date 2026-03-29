@@ -124,20 +124,29 @@ jobs:
           ls -R nfqws2
 
 ### ******************************************************************
-      - name: Add LuaJIT support from nilabsent/padavan-ng
+      - name: Enable LuaJIT 2.1 (libluajit from nilabsent) for build
         run: |
           set -e
           cd "$GITHUB_WORKSPACE"
       
-          # тут ИСПОЛЬЗУЕМ уже распакованный nilabsent, путь подстрой под свой шаг
+          # Путь к уже распакованному nilabsent/padavan-ng (подставь свой, если другой)
           NILABSENT_DIR="tmp/padavan-ng-master"
       
           echo "=== Copy libluajit package into hadzhioglu tree ==="
+          if [ ! -d "$NILABSENT_DIR/trunk/libs/libluajit" ]; then
+            echo "ERROR: $NILABSENT_DIR/trunk/libs/libluajit not found"
+            ls -R "$NILABSENT_DIR/trunk/libs" || true
+            exit 1
+          fi
+      
+          # Заменяем/добавляем пакет libluajit целиком
+          rm -rf "padavan-ng-hadzhioglu/trunk/libs/libluajit"
           cp -a "$NILABSENT_DIR/trunk/libs/libluajit" "padavan-ng-hadzhioglu/trunk/libs/"
       
-          echo "=== Ensure libluajit is built in libs/Makefile ==="
+          echo "=== Ensure libluajit is built from trunk/libs/Makefile ==="
           LIBS_MK="padavan-ng-hadzhioglu/trunk/libs/Makefile"
       
+          # Если libluajit ещё не включён в сборку, добавляем его в dir_y
           if ! grep -q "libluajit" "$LIBS_MK"; then
             awk '
               !done && /^dir_y[[:space:]]*\+=/ {
@@ -151,7 +160,7 @@ jobs:
             mv "$LIBS_MK.new" "$LIBS_MK"
           fi
       
-          echo "=== libluajit will be built into \$(STAGEDIR) ==="
+          echo "=== Done: make libs will build LuaJIT 2.1 into \$(STAGEDIR) (lib+headers) ==="
     
 ### ******************************************************************
 
