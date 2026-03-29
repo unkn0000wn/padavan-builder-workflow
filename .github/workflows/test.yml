@@ -164,6 +164,40 @@ jobs:
     
 ### ******************************************************************
 
+      - name: Patch libs/Makefile to add libluajit for NFQWS2
+        run: |
+          set -e
+          cd padavan-ng-hadzhioglu/trunk/libs
+          mf="Makefile"
+      
+          tmp="$(mktemp)"
+          matched=0
+          while IFS= read -r line; do
+            case "$line" in
+              *'dir_y'*'+='*'libz'*)
+                echo "$line" >> "$tmp"
+                echo 'dir_$(CONFIG_FIRMWARE_INCLUDE_NFQWS2)    += libluajit' >> "$tmp"
+                matched=1
+                ;;
+              *)
+                echo "$line" >> "$tmp"
+                ;;
+            esac
+          done < "$mf"
+          mv "$tmp" "$mf"
+      
+          # проверка
+          if [ "$matched" -ne 1 ]; then
+            echo "ERROR: base line with dir_y += libz not found, aborting build"
+            exit 1
+          fi
+          if ! grep -q 'dir_$(CONFIG_FIRMWARE_INCLUDE_NFQWS2)    += libluajit' "$mf"; then
+            echo "ERROR: libluajit line not found in $mf, aborting build"
+            exit 1
+          fi
+      
+          echo "=== libs/Makefile after libluajit patch ==="
+          sed -n '70,110p' "$mf"
         
 # ================================================================
 
