@@ -41,7 +41,7 @@ jobs:
               texinfo help2man libncurses5-dev \
               zlib1g-dev libsqlite3-dev gcc-multilib \
               curl dos2unix unzip wget locales xxd libltdl-dev \
-              libgmp3-dev libmpfr-dev libarchive-tools libblkid-dev
+              libgmp3-dev libmpfr-dev libarchive-tools libblkid-dev luajit-2.1
 
       - name: Update locales
         run: |
@@ -126,21 +126,7 @@ jobs:
 ### ******************************************************************
 ### ******************************************************************
 
-      - name: Inspect hadzhioglu toolchain for Lua/LuaJIT
-        run: |
-          set -e
-          cd padavan-ng-hadzhioglu/toolchain
-      
-          echo "=== search lua/luajit in toolchain/out ==="
-          if [ -d out ]; then
-            find out -maxdepth 6 -type f \( -iname "*lua*.so*" -o -iname "*luajit*.so*" -o -iname "lua*.h" -o -iname "luajit*.h" \) -print || true
-          else
-            echo "no out/ directory yet"
-          fi
-      
-          echo "=== search lua/luajit in mipsel sysroot ==="
-          find out -maxdepth 6 -type f -path "*mipsel*" \( -iname "*lua*.so*" -o -iname "*luajit*.so*" -o -iname "lua*.h" -o -iname "luajit*.h" \) -print || true
-          
+        
 # ================================================================
 
       - name: Patch user/Makefile to add nfqws2
@@ -177,16 +163,7 @@ jobs:
 
           echo "=== user/Makefile after nfqws2 patch ==="
           cat "$mf"
-          
-      - name: Debug NFQWS line formatting
-        run: |
-          set -e
-          echo "=== Raw NFQWS line from hadzhioglu master ==="
-          curl -fsSL 'https://raw.githubusercontent.com/hadzhioglu/padavan-ng/refs/heads/master/trunk/user/Makefile' \
-            | grep 'CONFIG_FIRMWARE_INCLUDE_NFQWS' \
-            | sed -n '1p' \
-            | sed -e 's/\t/[TAB]/g' -e 's/ /[SP]/g'
-          
+        
 #============================================================================
 
 
