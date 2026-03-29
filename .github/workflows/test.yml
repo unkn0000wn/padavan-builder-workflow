@@ -124,47 +124,29 @@ jobs:
           ls -R nfqws2
 
 ### ******************************************************************
-      - name: Enable LuaJIT 2.1 (libluajit from nilabsent) for build
+
+      - name: Replace libluajit from nilabsent/padavan-ng
+        if: env.ZAPRET_REPLACE_NFQWS2 == '1'
         run: |
           set -e
-          cd "$GITHUB_WORKSPACE"
+          cd padavan-ng-hadzhioglu/trunk/libs
       
-          # Путь к уже распакованному nilabsent/padavan-ng (подставь свой, если другой)
-          NILABSENT_DIR="tmp/padavan-ng-master"
+          echo "=== Replacing libluajit directory from nilabsent/padavan-ng ==="
+          rm -rf libluajit
+          mkdir -p libluajit
       
-          echo "=== Copy libluajit package into hadzhioglu tree ==="
-          if [ ! -d "$NILABSENT_DIR/trunk/libs/libluajit" ]; then
-            echo "ERROR: $NILABSENT_DIR/trunk/libs/libluajit not found"
-            ls -R "$NILABSENT_DIR/trunk/libs" || true
-            exit 1
-          fi
+          cp -a /tmp/padavan-ng-master/trunk/libs/libluajit/. libluajit/
       
-          # Заменяем/добавляем пакет libluajit целиком
-          rm -rf "padavan-ng-hadzhioglu/trunk/libs/libluajit"
-          cp -a "$NILABSENT_DIR/trunk/libs/libluajit" "padavan-ng-hadzhioglu/trunk/libs/"
+          echo "=== libluajit structure check ==="
+          [[ -f libluajit/Makefile ]] || { echo "Makefile missing in libluajit"; exit 1; }
+          [[ -f libluajit/LuaJIT-2.1.ROLLING.tar.gz ]] || { echo "LuaJIT-2.1.ROLLING.tar.gz missing in libluajit"; exit 1; }
       
-          echo "=== Ensure libluajit is built from trunk/libs/Makefile ==="
-          LIBS_MK="padavan-ng-hadzhioglu/trunk/libs/Makefile"
-      
-          # Если libluajit ещё не включён в сборку, добавляем его в dir_y
-          if ! grep -q "libluajit" "$LIBS_MK"; then
-            awk '
-              !done && /^dir_y[[:space:]]*\+=/ {
-                print $0;
-                print "dir_y += libluajit";
-                done=1;
-                next;
-              }
-              { print $0 }
-            ' "$LIBS_MK" > "$LIBS_MK.new"
-            mv "$LIBS_MK.new" "$LIBS_MK"
-          fi
-      
-          echo "=== Done: make libs will build LuaJIT 2.1 into \$(STAGEDIR) (lib+headers) ==="
+          ls -R libluajit
+    
     
 ### ******************************************************************
-
       - name: Patch libs/Makefile to add libluajit for NFQWS2
+        if: env.ZAPRET_REPLACE_NFQWS2 == '1'
         run: |
           set -e
           cd padavan-ng-hadzhioglu/trunk/libs
@@ -174,9 +156,10 @@ jobs:
           matched=0
           while IFS= read -r line; do
             case "$line" in
-              *'dir_y'*'+='*'libz'*)
+              *'dir_y						+= libz'*)
                 echo "$line" >> "$tmp"
-                echo 'dir_$(CONFIG_FIRMWARE_INCLUDE_NFQWS2)    += libluajit' >> "$tmp"
+                echo 'dir_y						+= libz' >> "$tmp"
+                echo 'dir_$(CONFIG_FIRMWARE_INCLUDE_NFQWS2)		+= libluajit' >> "$tmp"
                 matched=1
                 ;;
               *)
@@ -188,16 +171,16 @@ jobs:
       
           # проверка
           if [ "$matched" -ne 1 ]; then
-            echo "ERROR: base line with dir_y += libz not found, aborting build"
+            echo "ERROR: line with dir_y += libz not found, aborting build"
             exit 1
           fi
-          if ! grep -q 'dir_$(CONFIG_FIRMWARE_INCLUDE_NFQWS2)    += libluajit' "$mf"; then
+          if ! grep -q 'dir_$(CONFIG_FIRMWARE_INCLUDE_NFQWS2)		+= libluajit' "$mf"; then
             echo "ERROR: libluajit line not found in $mf, aborting build"
             exit 1
           fi
       
           echo "=== libs/Makefile after libluajit patch ==="
-          sed -n '70,110p' "$mf"
+          cat "$mf"
         
 # ================================================================
 
