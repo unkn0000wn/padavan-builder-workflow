@@ -41,7 +41,7 @@ jobs:
               texinfo help2man libncurses5-dev \
               zlib1g-dev libsqlite3-dev gcc-multilib \
               curl dos2unix unzip wget locales xxd libltdl-dev \
-              libgmp3-dev libmpfr-dev libarchive-tools libblkid-dev luajit-2.1
+              libgmp3-dev libmpfr-dev libarchive-tools libblkid-dev
 
       - name: Update locales
         run: |
@@ -124,6 +124,35 @@ jobs:
           ls -R nfqws2
 
 ### ******************************************************************
+      - name: Add LuaJIT support from nilabsent/padavan-ng
+        run: |
+          set -e
+          cd "$GITHUB_WORKSPACE"
+      
+          # тут ИСПОЛЬЗУЕМ уже распакованный nilabsent, путь подстрой под свой шаг
+          NILABSENT_DIR="tmp/padavan-ng-master"
+      
+          echo "=== Copy libluajit package into hadzhioglu tree ==="
+          cp -a "$NILABSENT_DIR/trunk/libs/libluajit" "padavan-ng-hadzhioglu/trunk/libs/"
+      
+          echo "=== Ensure libluajit is built in libs/Makefile ==="
+          LIBS_MK="padavan-ng-hadzhioglu/trunk/libs/Makefile"
+      
+          if ! grep -q "libluajit" "$LIBS_MK"; then
+            awk '
+              !done && /^dir_y[[:space:]]*\+=/ {
+                print $0;
+                print "dir_y += libluajit";
+                done=1;
+                next;
+              }
+              { print $0 }
+            ' "$LIBS_MK" > "$LIBS_MK.new"
+            mv "$LIBS_MK.new" "$LIBS_MK"
+          fi
+      
+          echo "=== libluajit will be built into \$(STAGEDIR) ==="
+    
 ### ******************************************************************
 
         
