@@ -151,6 +151,12 @@ jobs:
 
           echo "=== Full user/Makefile after patch ==="
           cat "$mf"
+
+          echo "=== Verifying patch ==="
+          if ! grep -q 'dir_$(CONFIG_FIRMWARE_INCLUDE_NFQWS2) += nfqws2' "$mf"; then
+            echo "ERROR: nfqws2 line not found in $mf, aborting build"
+            exit 1
+          fi
           
 #============================================================================
 
