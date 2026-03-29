@@ -166,6 +166,14 @@ jobs:
             echo "ERROR: nfqws2 line not found in $mf, aborting build"
             exit 1
           fi
+      - name: Debug NFQWS line formatting
+        run: |
+          set -e
+          echo "=== Raw NFQWS line from hadzhioglu master ==="
+          curl -fsSL 'https://raw.githubusercontent.com/hadzhioglu/padavan-ng/refs/heads/master/trunk/user/Makefile' \
+            | grep 'CONFIG_FIRMWARE_INCLUDE_NFQWS' \
+            | sed -n '1p' \
+            | sed -e 's/\t/[TAB]/g' -e 's/ /[SP]/g'
           
 #============================================================================
 
