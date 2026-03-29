@@ -84,7 +84,7 @@ jobs:
           rm -rf nfqws
           mkdir -p nfqws
 
-          # Скачиваем архив только каталога nfqws и распаковываем
+          # Скачиваем архив с Toolchain nilabsent и распаковываем
           curl -fsSL "https://github.com/nilabsent/padavan-ng/archive/refs/heads/master.tar.gz" -o /tmp/padavan-ng-nilabsent.tar.gz
 
           tar -xzf /tmp/padavan-ng-nilabsent.tar.gz -C /tmp
@@ -109,7 +109,7 @@ jobs:
           rm -rf nfqws2
           mkdir -p nfqws2
 
-          # Используем тот же архив (если хочется, можно вынести скачивание в отдельный шаг)
+          # Используем тот же архив с Toolchain nilabsent
           # curl -fsSL "https://github.com/nilabsent/padavan-ng/archive/refs/heads/master.tar.gz" -o /tmp/padavan-ng-nilabsent.tar.gz
 
           # tar -xzf /tmp/padavan-ng-nilabsent.tar.gz -C /tmp
@@ -122,6 +122,25 @@ jobs:
           [[ -f nfqws2/zapret2-0.9.4.5.tar.gz ]] || { echo "zapret2-0.9.4.5.tar.gz missing in nfqws2"; exit 1; }
 
           ls -R nfqws2
+
+### ******************************************************************
+### ******************************************************************
+
+      - name: Inspect hadzhioglu toolchain for Lua/LuaJIT
+        run: |
+          set -e
+          cd padavan-ng-hadzhioglu/toolchain
+      
+          echo "=== search lua/luajit in toolchain/out ==="
+          if [ -d out ]; then
+            find out -maxdepth 6 -type f \( -iname "*lua*.so*" -o -iname "*luajit*.so*" -o -iname "lua*.h" -o -iname "luajit*.h" \) -print || true
+          else
+            echo "no out/ directory yet"
+          fi
+      
+          echo "=== search lua/luajit in mipsel sysroot ==="
+          find out -maxdepth 6 -type f -path "*mipsel*" \( -iname "*lua*.so*" -o -iname "*luajit*.so*" -o -iname "lua*.h" -o -iname "luajit*.h" \) -print || true
+          
 # ================================================================
 
       - name: Patch user/Makefile to add nfqws2
