@@ -127,45 +127,42 @@ jobs:
       - name: Patch user/Makefile to add nfqws2
         run: |
           set -e
-          set -x
           cd padavan-ng-hadzhioglu/trunk/user
           mf="Makefile"
 
           echo "=== Patching user/Makefile to add nfqws2 ==="
           echo "=== Before patch (NFQWS lines, with numbers) ==="
-          nl -ba "$mf" | grep 'NFQWS' || echo "no NFQWS lines before patch"
-
-          # паттерн с ТЕМи же табами, что у тебя в Makefile:
-          # набери эту строку КОПИПАСТОМ из лога/редактора между одинарными кавычками
-          pat='dir_$(CONFIG_FIRMWARE_INCLUDE_NFQWS)		+= nfqws'
+          nl -ba "$mf" | grep 'CONFIG_FIRMWARE_INCLUDE_NFQWS' || echo "no NFQWS lines before patch"
 
           tmp="$(mktemp)"
           matched=0
           while IFS= read -r line; do
-            printf 'LINE: [%s]\n' "$line"
-            if [ "$line" = "$pat" ]; then
-              echo 'MATCHED NFQWS LINE, PATCHING' >&2
-              echo 'dir_$(CONFIG_FIRMWARE_INCLUDE_NFQWS)		+= nfqws' >> "$tmp"
-              echo 'dir_$(CONFIG_FIRMWARE_INCLUDE_NFQWS2)		+= nfqws2' >> "$tmp"
-              matched=1
-            else
-              echo "$line" >> "$tmp"
-            fi
+            case "$line" in
+              *'CONFIG_FIRMWARE_INCLUDE_NFQWS'*)
+                echo "MATCHED LINE WITH CONFIG_FIRMWARE_INCLUDE_NFQWS, PATCHING" >&2
+                echo 'dir_$(CONFIG_FIRMWARE_INCLUDE_NFQWS)+= nfqws' >> "$tmp"
+                echo 'dir_$(CONFIG_FIRMWARE_INCLUDE_NFQWS2)+= nfqws2' >> "$tmp"
+                matched=1
+                ;;
+              *)
+                echo "$line" >> "$tmp"
+                ;;
+            esac
           done < "$mf"
           mv "$tmp" "$mf"
 
           echo "=== After patch (NFQWS lines, with numbers) ==="
-          nl -ba "$mf" | grep 'NFQWS' || echo "no NFQWS lines after patch"
+          nl -ba "$mf" | grep 'CONFIG_FIRMWARE_INCLUDE_NFQWS' || echo "no NFQWS lines after patch"
 
           echo "=== Full user/Makefile after patch ==="
           cat "$mf"
 
           echo "=== Verifying patch ==="
           if [ "$matched" -ne 1 ]; then
-            echo "ERROR: NFQWS line with exact tabs not found, aborting build"
+            echo "ERROR: line with CONFIG_FIRMWARE_INCLUDE_NFQWS not found, aborting build"
             exit 1
           fi
-          if ! grep -q 'dir_$(CONFIG_FIRMWARE_INCLUDE_NFQWS2)		+= nfqws2' "$mf"; then
+          if ! grep -q 'dir_$(CONFIG_FIRMWARE_INCLUDE_NFQWS2)+= nfqws2' "$mf"; then
             echo "ERROR: nfqws2 line not found in $mf, aborting build"
             exit 1
           fi
