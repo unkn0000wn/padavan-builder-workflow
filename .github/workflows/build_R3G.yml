@@ -51,6 +51,7 @@ jobs:
 
       - name: Build firmware R3G
         run: |
+         set -xe
           cp build_R3G.config padavan-ng/trunk/.config
           cd padavan-ng/trunk
           ./clear_tree.sh
